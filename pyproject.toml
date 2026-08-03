@@ -1,0 +1,19 @@
+[project]
+name = "seance-11"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Antoine", email = "antoineblain43@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "django>=6.0.7",
+]
+
+[project.scripts]
+seance-11 = "seance_11:main"
+
+[build-system]
+requires = ["uv_build>=0.12.1,<0.13.0"]
+build-backend = "uv_build"
