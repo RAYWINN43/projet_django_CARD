@@ -1,10 +1,10 @@
 [project]
-name = "seance-11"
+name = "django-intro"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
-    { name = "Antoine", email = "antoineblain43@gmail.com" }
+    { name = "aptitek", email = "aptitek@users.noreply.github.com" }
 ]
 requires-python = ">=3.13"
 dependencies = [
@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [project.scripts]
-seance-11 = "seance_11:main"
+django-intro = "django_intro:main"
 
 [build-system]
 requires = ["uv_build>=0.12.1,<0.13.0"]

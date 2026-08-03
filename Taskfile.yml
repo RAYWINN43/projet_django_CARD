@@ -1,0 +1,51 @@
+version: '3'
+
+vars:
+  HOST: 127.0.0.1
+  PORT: 8000
+  URL: http://{{.HOST}}:{{.PORT}}/
+
+tasks:
+  default:
+    desc: Liste des tâches disponibles
+    cmds:
+      - task --list
+
+  check:
+    desc: Vérification de configuration et système (Django check)
+    cmds:
+      - uv run python manage.py check
+
+  lint:
+    desc: Linter le code Python (ruff)
+    cmds:
+      - uvx ruff check .
+
+  lint:fix:
+    desc: Corriger automatiquement les erreurs de linting (ruff)
+    cmds:
+      - uvx ruff check . --fix
+
+  test:
+    desc: Exécuter les tests unitaires Django
+    cmds:
+      - uv run python manage.py test
+
+  run:
+    desc: Lancer le serveur de développement Django
+    cmds:
+      - uv run python manage.py runserver {{.HOST}}:{{.PORT}}
+
+  preview:
+    desc: Ouvrir l'application dans le navigateur par défaut
+    cmds:
+      - python3 -m webbrowser {{.URL}}
+
+  clean:
+    desc: Nettoyer les fichiers de cache (__pycache__, .pytest_cache, .ruff_cache, *.pyc)
+    cmds:
+      - find . -type d -name "__pycache__" -exec rm -rf {} +
+      - find . -type f -name "*.pyc" -delete
+      - find . -type d -name ".pytest_cache" -exec rm -rf {} +
+      - find . -type d -name ".ruff_cache" -exec rm -rf {} +
+
