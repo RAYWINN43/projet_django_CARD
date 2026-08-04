@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'ehlo',
+    'accounts',
 ]
 
 MIDDLEWARE = [
@@ -55,7 +55,7 @@ ROOT_URLCONF = 'django_intro.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / "templates"],
+        'DIRS': [BASE_DIR / "front", BASE_DIR / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -117,6 +117,8 @@ USE_TZ = True
 
 # Fichiers statiques
 STATIC_URL = "static/"
+STATICFILES_DIRS = [BASE_DIR / "front"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 
 # Redirections authentification
