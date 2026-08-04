@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Interface d'accueil et d'authentification du jeu BlackJack."
+    />
+    <title>BlackJack — Accueil</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Coiny&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="screen home-screen" data-screen="home" aria-labelledby="home-title">
+        <div class="home-content">
+          <img
+            class="home-illustration"
+            src="assets/blackjack.png"
+            alt="Table de blackjack avec cartes et emplacements de jeu"
+          />
+          <h1 class="brand-title home-title" id="home-title">BlackJack</h1>
+          <button class="play-button" type="button" data-go-to="login">PLAY</button>
+        </div>
+      </section>
+
+      <section class="screen auth-screen" data-screen="login" aria-labelledby="login-title" hidden>
+        <button class="corner-brand" type="button" data-go-to="home" aria-label="Retour à l'accueil">
+          <img src="assets/blackjack.png" alt="" />
+          <span class="brand-title">BlackJack</span>
+        </button>
+
+        <div class="auth-content auth-content--login">
+          <div class="auth-card">
+            <h1 class="auth-title" id="login-title">Login</h1>
+
+            <form class="auth-form auth-form--login" data-static-form novalidate>
+              <div class="field-stack">
+                <label class="sr-only" for="login-username">Nom d’utilisateur</label>
+                <input
+                  class="auth-input"
+                  id="login-username"
+                  name="username"
+                  type="text"
+                  autocomplete="username"
+                  placeholder="Username"
+                />
+
+                <label class="sr-only" for="login-password">Mot de passe</label>
+                <input
+                  class="auth-input"
+                  id="login-password"
+                  name="password"
+                  type="password"
+                  autocomplete="current-password"
+                  placeholder="Password"
+                />
+              </div>
+
+              <button class="auth-submit" type="submit">LOGIN</button>
+            </form>
+          </div>
+
+          <p class="auth-switch">
+            Vous n’avez pas de compte ?
+            <button type="button" data-go-to="register">cliquez ici</button>
+          </p>
+        </div>
+      </section>
+
+      <section class="screen auth-screen" data-screen="register" aria-labelledby="register-title" hidden>
+        <button class="corner-brand" type="button" data-go-to="home" aria-label="Retour à l'accueil">
+          <img src="assets/blackjack.png" alt="" />
+          <span class="brand-title">BlackJack</span>
+        </button>
+
+        <div class="auth-content auth-content--register">
+          <div class="auth-card">
+            <h1 class="auth-title" id="register-title">Register</h1>
+
+            <form class="auth-form auth-form--register" data-static-form novalidate>
+              <div class="field-stack">
+                <label class="sr-only" for="register-username">Pseudonyme</label>
+                <input
+                  class="auth-input"
+                  id="register-username"
+                  name="username"
+                  type="text"
+                  autocomplete="username"
+                  placeholder="Pseudonyme"
+                />
+
+                <label class="sr-only" for="register-email">Adresse e-mail</label>
+                <input
+                  class="auth-input"
+                  id="register-email"
+                  name="email"
+                  type="email"
+                  autocomplete="email"
+                  placeholder="Email"
+                />
+
+                <label class="sr-only" for="register-password">Mot de passe</label>
+                <input
+                  class="auth-input"
+                  id="register-password"
+                  name="password"
+                  type="password"
+                  autocomplete="new-password"
+                  placeholder="Password"
+                />
+              </div>
+
+              <button class="auth-submit" type="submit">LOGIN</button>
+            </form>
+          </div>
+
+          <p class="auth-switch">
+            Vous avez un compte ?
+            <button type="button" data-go-to="login">cliquez ici</button>
+          </p>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
