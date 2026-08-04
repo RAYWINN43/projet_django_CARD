@@ -3,7 +3,10 @@ from random import randint
 
 # Create your models here.
 
-class Card() :
+class Card(models.Model) :
+    value = models.IntegerField
+    suit = models.CharField(max_length=8)
+
     def __init__(self, value, suit) :
         self.value = value
         self.true_value = value if value <= 10 else 10
@@ -12,7 +15,9 @@ class Card() :
     def display(self) :
         return f"{self.value}{self.suit[0].capitalize()}"
 
-class Deck() :
+class Deck(models.Model) :
+    visible = models.BooleanField
+
     def __init__(self, visible=True) :
         self.cards = []
         self.visible = visible
@@ -67,14 +72,20 @@ class Deck() :
             aces -= 1
         return value
 
-class Player() :
+class Player(models.Model) :
+    bank = models.IntegerField
+    
     def __init__(self) :
         self.bank = 100
 
     def add_to_bank(self, amount) :
         self.bank += amount
 
-class Game() :
+class Game(models.Model) :
+    pool = models.IntegerField
+    bet_value = models.IntegerField
+    running = models.BooleanField
+
     def __init__(self, player) :
         self.player = player
         self.pool = 0
