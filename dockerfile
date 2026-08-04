@@ -1,33 +1,28 @@
-FROM python:3.13-alpine AS builder
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-WORKDIR /app
+COPY pyproject.toml uv.lock README.md ./
+COPY src ./src
 
 RUN uv venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY pyproject.toml .
-COPY README.md .
-COPY src ./src
-
-# Install dependencies using uv
 RUN uv pip install --no-cache .
-
-FROM python:3.13-alpine AS production
-
-WORKDIR /app
-
-ENV PATH="/opt/venv/bin:$PATH"
-COPY --from=builder /opt/venv /opt/venv
 
 COPY . .
 
-RUN addgroup -S django && adduser -S -G django django \
+RUN addgroup --system django \
+    && adduser --system --ingroup django django \
     && chown -R django:django /app
 
 USER django
 
-EXPOSE 7860
+EXPOSE 8000
 
-CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn --bind 0.0.0.0:${PORT:-7860} --workers 2 --threads 4 config.wsgi:application"]
+CMD ["gunicorn", "django_intro.wsgi:application", "--bind", "0.0.0.0:8000"]
