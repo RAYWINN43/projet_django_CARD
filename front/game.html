@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Interface de jeu du jeu BlackJack."
+    />
+    <title>BlackJack — Partie</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Coiny&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+
+  <body>
+    <div id="status">À vous de jouer</div>
+    <button class="action_button" id="launch", onclick="launch()">Lancer</button>
+    <button class="action_button" id="hit", onclick="play_turn('hit')">Piocher</button>
+    <button class="action_button" id="double", onclick="play_turn('double')">Doubler</button>
+    <button class="action_button" id="stop", onclick="play_turn('stop')">Rester</button>
+    
+    <script>
+        function launch() {
+            window.location.href = `/game/{{ game.id }}/launch`
+        }
+        function play_turn(move) {
+            window.location.href = `/game/{{ game.id }}/play/${move}`
+        }
+
+    </script>
+  </body>
+
+</html>
