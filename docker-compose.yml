@@ -5,9 +5,10 @@ services:
       dockerfile: dockerfile
     restart: unless-stopped
     command: >
-      sh -c "python manage.py migrate &&
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
              (python manage.py createsuperuser --noinput || true) &&
-             python manage.py runserver 0.0.0.0:8000"
+             gunicorn django_intro.wsgi:application --bind 0.0.0.0:8000 --workers 2"
     ports:
       - "8000:8000"
     env_file:
