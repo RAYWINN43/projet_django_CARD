@@ -18,11 +18,12 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 from django.views.generic import RedirectView
 
-from .views import home
+from .views import home, register
 
 urlpatterns = [
     path("", RedirectView.as_view(pattern_name="login", permanent=False), name="root"),
     path("home/", home, name="home"),
+    path("register/", register, name="register"),
 
     path(
         "login/",
