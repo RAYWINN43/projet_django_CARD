@@ -1,22 +1,21 @@
+
+
 from django.db import models
 from random import randint
 
 # Create your models here.
 
-class Card(models.Model) :
-    value = models.IntegerField
-    suit = models.CharField(max_length=8)
+class Card() :
 
     def __init__(self, value, suit) :
         self.value = value
         self.true_value = value if value <= 10 else 10
         self.suit = suit
 
-    def display(self) :
+    def __str__(self) :
         return f"{self.value}{self.suit[0].capitalize()}"
 
-class Deck(models.Model) :
-    visible = models.BooleanField
+class Deck() :
 
     def __init__(self, visible=True) :
         self.cards = []
@@ -53,10 +52,10 @@ class Deck(models.Model) :
     def add_many(self, cards) :
         self.cards += cards
 
-    def display(self) :
+    def __str__(self) :
         to_display = ""
         for card in self.cards :
-            to_display += card.display() if self.visible else "XX"
+            to_display += str(card) if self.visible else "XX"
             to_display += ", "
         return to_display[:-2]
 
@@ -72,8 +71,7 @@ class Deck(models.Model) :
             aces -= 1
         return value
 
-class Player(models.Model) :
-    bank = models.IntegerField
+class Player() :
     
     def __init__(self) :
         self.bank = 100
@@ -82,12 +80,9 @@ class Player(models.Model) :
         self.bank += amount
 
 class Game(models.Model) :
-    pool = models.IntegerField
-    bet_value = models.IntegerField
-    running = models.BooleanField
 
-    def __init__(self, player) :
-        self.player = player
+    def __init__(self) :
+        self.player = Player() # Placeholder, à adapter
         self.pool = 0
         self.bet_value = 0
         self.draw_pile = Deck()
@@ -129,23 +124,25 @@ class Game(models.Model) :
         {'Partie en cours :' if self.running else 'Partie terminée'}
         Pool : {self.pool} $
         Banque : {self.player.bank} $
-        Joueur : {self.player_hand.display()}
-        Croupier : {self.croupier_hand.display()}
-        Défausse : {self.discard_pile.display()}""")
+        Joueur : {self.player_hand}
+        Croupier : {self.croupier_hand}
+        Défausse : {self.discard_pile}""")
 
     def hit(self) :
         self.player_draw()
         if self.player_hand.hand_value() > 21 :
-            self.check_results()
+            return True
+        else :
+            return False
 
     def stop(self) :
-        self.check_results()
+        return True
 
     def double(self) :
         self.player.add_to_bank(-self.bet_value)
         self.pool += self.bet_value
         self.player_draw()
-        self.check_results()
+        return True
 
     def check_results(self) :
         if self.running :
@@ -153,17 +150,18 @@ class Game(models.Model) :
             self.croupier_hand.set_visible()
             player_score = self.player_hand.hand_value()
             croupier_score = self.croupier_hand.hand_value()
-            print(f"""
+            log = f"""
             Joueur : {player_score}
-            Croupier : {croupier_score}""")
+            Croupier : {croupier_score}"""
             if player_score < croupier_score or player_score > 21 :
-                print("Le croupier a gagné")
+                log += "\nLe croupier a gagné"
             elif player_score > croupier_score :
-                print("Le joueur a gagné")
+                log += "\nLe joueur a gagné"
                 self.player.add_to_bank(2*self.pool)
             else :
-                print("Égalité")
+                log += "\nÉgalité"
             self.player.add_to_bank(self.pool)
+            return log
 
 
 if __name__ == "__main__" :
