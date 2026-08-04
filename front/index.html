@@ -1,3 +1,5 @@
+{% load static %}
+
 <!doctype html>
 <html lang="fr">
   <head>
@@ -5,25 +7,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Interface d'accueil et d'authentification du jeu BlackJack."
+      content="Interface de connexion du jeu BlackJack."
     />
-    <title>BlackJack — Accueil</title>
+    <title>BlackJack - Login</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Coiny&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css" />
-    <script src="app.js" defer></script>
+    <link rel="stylesheet" href="{% static 'styles.css' %}" />
+    <script src="{% static 'app.js' %}" defer></script>
   </head>
   <body>
     <main class="app-shell">
-      <section class="screen home-screen" data-screen="home" aria-labelledby="home-title">
+      <section class="screen home-screen" data-screen="home" aria-labelledby="home-title" hidden>
         <div class="home-content">
           <img
             class="home-illustration"
-            src="assets/blackjack.png"
+            src="{% static 'assets/blackjack.png' %}"
             alt="Table de blackjack avec cartes et emplacements de jeu"
           />
           <h1 class="brand-title home-title" id="home-title">BlackJack</h1>
@@ -31,9 +33,9 @@
         </div>
       </section>
 
-      <section class="screen auth-screen" data-screen="login" aria-labelledby="login-title" hidden>
-        <button class="corner-brand" type="button" data-go-to="home" aria-label="Retour à l'accueil">
-          <img src="assets/blackjack.png" alt="" />
+      <section class="screen auth-screen" data-screen="login" aria-labelledby="login-title">
+        <button class="corner-brand" type="button" data-go-to="home" aria-label="Retour a l'accueil">
+          <img src="{% static 'assets/blackjack.png' %}" alt="" />
           <span class="brand-title">BlackJack</span>
         </button>
 
@@ -41,26 +43,35 @@
           <div class="auth-card">
             <h1 class="auth-title" id="login-title">Login</h1>
 
-            <form class="auth-form auth-form--login" data-static-form novalidate>
+            <form class="auth-form auth-form--login" method="post" action="{% url 'login' %}">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ next }}" />
+
+              {% if form.errors %}
+                <p class="auth-error">Identifiants incorrects.</p>
+              {% endif %}
+
               <div class="field-stack">
-                <label class="sr-only" for="login-username">Nom d’utilisateur</label>
+                <label class="sr-only" for="id_username">Nom d'utilisateur</label>
                 <input
                   class="auth-input"
-                  id="login-username"
+                  id="id_username"
                   name="username"
                   type="text"
                   autocomplete="username"
                   placeholder="Username"
+                  required
                 />
 
-                <label class="sr-only" for="login-password">Mot de passe</label>
+                <label class="sr-only" for="id_password">Mot de passe</label>
                 <input
                   class="auth-input"
-                  id="login-password"
+                  id="id_password"
                   name="password"
                   type="password"
                   autocomplete="current-password"
                   placeholder="Password"
+                  required
                 />
               </div>
 
@@ -69,15 +80,15 @@
           </div>
 
           <p class="auth-switch">
-            Vous n’avez pas de compte ?
+            Vous n'avez pas de compte ?
             <button type="button" data-go-to="register">cliquez ici</button>
           </p>
         </div>
       </section>
 
       <section class="screen auth-screen" data-screen="register" aria-labelledby="register-title" hidden>
-        <button class="corner-brand" type="button" data-go-to="home" aria-label="Retour à l'accueil">
-          <img src="assets/blackjack.png" alt="" />
+        <button class="corner-brand" type="button" data-go-to="home" aria-label="Retour a l'accueil">
+          <img src="{% static 'assets/blackjack.png' %}" alt="" />
           <span class="brand-title">BlackJack</span>
         </button>
 
@@ -118,7 +129,7 @@
                 />
               </div>
 
-              <button class="auth-submit" type="submit">LOGIN</button>
+              <button class="auth-submit" type="submit">REGISTER</button>
             </form>
           </div>
 
