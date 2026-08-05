@@ -20,19 +20,42 @@
 
   <body>
     <div id="status">À vous de jouer</div>
-    <button class="action_button" id="launch", onclick="launch()">Lancer</button>
-    <button class="action_button" id="hit", onclick="play_turn('hit')">Piocher</button>
-    <button class="action_button" id="double", onclick="play_turn('double')">Doubler</button>
-    <button class="action_button" id="stop", onclick="play_turn('stop')">Rester</button>
+    <button class="action_button" id="launch" onclick="launch()" style="visibility: visible;">Lancer</button>
+    <button class="action_button" id="hit" onclick="play_turn('hit')" style="visibility: hidden;">Piocher</button>
+    <button class="action_button" id="double" onclick="play_turn('double')" style="visibility: hidden;">Doubler</button>
+    <button class="action_button" id="stop" onclick="play_turn('stop')" style="visibility: hidden;">Rester</button>
     
     <script>
-        function launch() {
-            window.location.href = `/game/{{ game.id }}/launch`
-        }
-        function play_turn(move) {
-            window.location.href = `/game/{{ game.id }}/play/${move}`
+        const gameId = "{{ game.id|default:'' }}";
+
+        const launchButton = document.getElementById("launch");
+        const hitButton = document.getElementById("hit");
+        const doubleButton = document.getElementById("double");
+        const stopButton = document.getElementById("stop");
+
+        function syncButtons() {
+            const hasGame = Boolean(gameId);
+
+            launchButton.style.visibility = hasGame ? "hidden" : "visible";
+            hitButton.style.visibility = hasGame ? "visible" : "hidden";
+            doubleButton.style.visibility = hasGame ? "visible" : "hidden";
+            stopButton.style.visibility = hasGame ? "visible" : "hidden";
         }
 
+        function launch() {
+            window.location.href = "/game/launch";
+        }
+
+        function play_turn(move) {
+            if (!gameId) {
+                launch();
+                return;
+            }
+
+            window.location.href = `/game/${gameId}/play/${move}`;
+        }
+
+        document.addEventListener("DOMContentLoaded", syncButtons);
     </script>
   </body>
 
