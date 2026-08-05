@@ -1,0 +1,173 @@
+{% load static %}
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Choix du personnage avant de lancer une partie de BlackJack."
+    />
+    <title>BlackJack - Choix du personnage</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Coiny&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'styles.css' %}" />
+    <link rel="stylesheet" href="{% static 'avatar.css' %}" />
+    <script src="{% static 'avatar.js' %}" defer></script>
+  </head>
+  <body class="avatar-page">
+    <main class="avatar-shell" data-avatar-page data-game-url="/game/">
+      <div class="avatar-brand" aria-label="BlackJack">
+        <img src="{% static 'assets/blackjack.png' %}" alt="" />
+        <span class="brand-title">BlackJack</span>
+      </div>
+
+      <aside class="player-summary" aria-label="Profil du joueur">
+        <img
+          class="player-summary__portrait"
+          src="{% static 'assets/utilisateur.png' %}"
+          alt="Avatar du profil"
+        />
+        <p class="player-summary__name">{{ user.username|default:"Snowlly" }}</p>
+      </aside>
+
+      <section class="avatar-picker" aria-labelledby="avatar-picker-title">
+        <h1 class="avatar-picker__title" id="avatar-picker-title">Choose your avatar</h1>
+
+        <div
+          class="avatar-carousel"
+          data-avatar-carousel
+          aria-roledescription="carrousel"
+          data-avatar-start="3"
+        >
+          <div class="avatar-sources" hidden>
+            <span
+              data-avatar-id="homme-lunettes"
+              data-avatar-name="Homme avec lunettes"
+              data-avatar-src="{% static 'assets/homme.png' %}"
+            ></span>
+            <span
+              data-avatar-id="femme-rose"
+              data-avatar-name="Femme en rose"
+              data-avatar-src="{% static 'assets/fille.png' %}"
+            ></span>
+            <span
+              data-avatar-id="femme-bleu"
+              data-avatar-name="Femme en bleu"
+              data-avatar-src="{% static 'assets/fille (1).png' %}"
+            ></span>
+            <span
+              data-avatar-id="homme-manteau"
+              data-avatar-name="Homme avec manteau"
+              data-avatar-src="{% static 'assets/homme (2).png' %}"
+            ></span>
+            <span
+              data-avatar-id="homme-barbe"
+              data-avatar-name="Homme barbu"
+              data-avatar-src="{% static 'assets/homme (1).png' %}"
+            ></span>
+          </div>
+
+          <button
+            class="carousel-arrow carousel-arrow--previous"
+            type="button"
+            data-carousel-previous
+            aria-label="Personnage précédent"
+          >
+            <svg aria-hidden="true" viewBox="0 0 64 64">
+              <path d="M54 5 8 32l46 27V5Z" fill="currentColor" />
+            </svg>
+          </button>
+
+          <img class="carousel-avatar carousel-avatar--previous" data-avatar-previous alt="" />
+          <img class="carousel-avatar carousel-avatar--active" data-avatar-active alt="" />
+          <img class="carousel-avatar carousel-avatar--next" data-avatar-next alt="" />
+
+          <button
+            class="carousel-arrow carousel-arrow--next"
+            type="button"
+            data-carousel-next
+            aria-label="Personnage suivant"
+          >
+            <svg aria-hidden="true" viewBox="0 0 64 64">
+              <path d="m10 5 46 27-46 27V5Z" fill="currentColor" />
+            </svg>
+          </button>
+
+          <p class="sr-only" data-avatar-status aria-live="polite"></p>
+        </div>
+
+        <button class="select-avatar-button" type="button" data-select-avatar aria-pressed="false">
+          SELECT
+        </button>
+      </section>
+
+      <button class="launch-game-button" type="button" data-launch-game>
+        LANCEZ LA PARTIE
+      </button>
+
+      <div class="settings-menu" data-settings-menu>
+        <div class="settings-panel" id="settings-panel" data-settings-panel aria-hidden="true">
+          <form class="settings-action settings-action--logout" method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" aria-label="Se déconnecter">
+              <img src="{% static 'assets/se-deconnecter.png' %}" alt="" />
+            </button>
+          </form>
+
+          <button
+            class="settings-action settings-action--rules"
+            type="button"
+            data-open-rules
+            aria-label="Afficher les règles du jeu"
+          >
+            <img src="{% static 'assets/demander-de-laide.png' %}" alt="" />
+          </button>
+
+          <button
+            class="settings-action settings-action--sound"
+            type="button"
+            data-sound-toggle
+            data-muted-src="{% static 'assets/volume-coupe.png' %}"
+            data-sound-src="{% static 'assets/monter-le-son (1).png' %}"
+            aria-label="Activer le son"
+            aria-pressed="true"
+          >
+            <img data-sound-icon src="{% static 'assets/volume-coupe.png' %}" alt="" />
+          </button>
+
+          <!-- Emplacement prévu pour la future action liée aux logs de la partie. -->
+        </div>
+
+        <button
+          class="settings-toggle"
+          type="button"
+          data-settings-toggle
+          aria-label="Ouvrir les paramètres"
+          aria-controls="settings-panel"
+          aria-expanded="false"
+        >
+          <img src="{% static 'assets/parametres.png' %}" alt="" />
+        </button>
+      </div>
+    </main>
+
+    <dialog class="rules-dialog" data-rules-dialog aria-labelledby="rules-title">
+      <div class="rules-dialog__content">
+        <h2 id="rules-title">Règles du BlackJack</h2>
+        <ul>
+          <li>Approchez-vous de 21 sans dépasser ce total.</li>
+          <li>Les figures valent 10 et l’as vaut 1 ou 11.</li>
+          <li>Demandez une carte, restez ou doublez votre mise.</li>
+          <li>Le croupier tire jusqu’à atteindre au moins 17.</li>
+        </ul>
+        <button type="button" data-close-rules>FERMER</button>
+      </div>
+    </dialog>
+  </body>
+</html>
