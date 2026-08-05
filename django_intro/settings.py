@@ -75,6 +75,9 @@ WSGI_APPLICATION = 'django_intro.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
+REDIS_HOST = os.environ.get("REDIS_HOST")
+REDIS_PORT = os.environ.get("REDIS_PORT", "6379")
+REDIS_DB = os.environ.get("REDIS_DB", "1")
 
 if POSTGRES_HOST:
     DATABASES = {
@@ -94,6 +97,20 @@ else:
             "NAME": BASE_DIR / "db.sqlite3",
         }
     }
+
+
+if REDIS_HOST:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}",
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            },
+        }
+    }
+    SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+    SESSION_CACHE_ALIAS = "default"
 
 
 # Password validation
@@ -152,3 +169,4 @@ SESSION_SAVE_EVERY_REQUEST = True
 
 # Securite CSRF
 CSRF_COOKIE_AGE = None
+CSRF_USE_SESSIONS = True
