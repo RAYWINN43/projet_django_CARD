@@ -214,6 +214,19 @@ button {
   white-space: nowrap;
 }
 
+.auth-error {
+  position: absolute;
+  top: 98px;
+  left: 40px;
+  width: calc(100% - 80px);
+  margin: 0;
+  color: var(--color-white);
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.25;
+  text-align: center;
+}
+
 .auth-form,
 .field-stack {
   display: flex;
@@ -375,6 +388,13 @@ button {
   .auth-title {
     top: 30px;
     font-size: 30px;
+  }
+
+  .auth-error {
+    top: 74px;
+    left: 30px;
+    width: calc(100% - 60px);
+    font-size: 14px;
   }
 
   .field-stack {

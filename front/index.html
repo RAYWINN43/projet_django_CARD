@@ -33,7 +33,7 @@
         </div>
       </section>
 
-      <section class="screen auth-screen" data-screen="login" aria-labelledby="login-title">
+      <section class="screen auth-screen" data-screen="login" aria-labelledby="login-title" {% if show_register %}hidden{% endif %}>
         <button class="corner-brand" type="button" data-go-to="home" aria-label="Retour a l'accueil">
           <img src="{% static 'assets/blackjack.png' %}" alt="" />
           <span class="brand-title">BlackJack</span>
@@ -86,7 +86,7 @@
         </div>
       </section>
 
-      <section class="screen auth-screen" data-screen="register" aria-labelledby="register-title" hidden>
+      <section class="screen auth-screen" data-screen="register" aria-labelledby="register-title" {% if not show_register %}hidden{% endif %}>
         <button class="corner-brand" type="button" data-go-to="home" aria-label="Retour a l'accueil">
           <img src="{% static 'assets/blackjack.png' %}" alt="" />
           <span class="brand-title">BlackJack</span>
@@ -96,7 +96,13 @@
           <div class="auth-card">
             <h1 class="auth-title" id="register-title">Register</h1>
 
-            <form class="auth-form auth-form--register" data-static-form novalidate>
+            <form class="auth-form auth-form--register" method="post" action="{% url 'register' %}">
+              {% csrf_token %}
+
+              {% if register_error %}
+                <p class="auth-error">{{ register_error }}</p>
+              {% endif %}
+
               <div class="field-stack">
                 <label class="sr-only" for="register-username">Pseudonyme</label>
                 <input
@@ -106,6 +112,7 @@
                   type="text"
                   autocomplete="username"
                   placeholder="Pseudonyme"
+                  required
                 />
 
                 <label class="sr-only" for="register-email">Adresse e-mail</label>
@@ -116,6 +123,7 @@
                   type="email"
                   autocomplete="email"
                   placeholder="Email"
+                  required
                 />
 
                 <label class="sr-only" for="register-password">Mot de passe</label>
@@ -126,6 +134,7 @@
                   type="password"
                   autocomplete="new-password"
                   placeholder="Password"
+                  required
                 />
               </div>
 
