@@ -45,6 +45,7 @@
     
     <script>
         const gameId = "{{ game.id|default:'' }}";
+        const isGameRunning = "{{ game.running|yesno:'true,false' }}" === "true";
 
         const launchButton = document.getElementById("launch");
         const hitButton = document.getElementById("hit");
@@ -56,7 +57,7 @@
         const cancelBetButton = document.getElementById("cancel-bet");
 
         function syncButtons() {
-            const hasGame = Boolean(gameId);
+            const hasGame = Boolean(gameId) && isGameRunning;
 
             launchButton.style.visibility = hasGame ? "hidden" : "visible";
             hitButton.style.visibility = hasGame ? "visible" : "hidden";
