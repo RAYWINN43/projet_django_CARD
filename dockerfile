@@ -17,6 +17,8 @@ RUN uv pip install --no-cache .
 
 COPY . .
 
+RUN python manage.py collectstatic --noinput
+
 RUN addgroup --system django \
     && adduser --system --ingroup django django \
     && chown -R django:django /app
