@@ -18,7 +18,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 from django.views.generic import RedirectView
 
-from .views import home, register
+from .views import home, logout_view, register
 
 urlpatterns = [
     path("", RedirectView.as_view(pattern_name="login", permanent=False), name="root"),
@@ -34,5 +34,5 @@ urlpatterns = [
         name="login",
     ),
 
-    path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+    path("logout/", logout_view, name="logout"),
 ]
