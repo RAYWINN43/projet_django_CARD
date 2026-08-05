@@ -1,0 +1,32 @@
+@startuml
+!theme toy
+title Machine a etats - Tours de jeu BlackJack
+
+[*] --> AttenteMise
+
+AttenteMise --> Distribution : mise validee
+Distribution --> TourJoueur : cartes distribuees
+
+TourJoueur --> TourJoueur : Hit / score joueur <= 21
+TourJoueur --> FinPartie : Hit / score joueur > 21
+TourJoueur --> TourCroupier : Stand
+TourJoueur --> TourCroupier : Double
+
+TourCroupier --> TourCroupier : score croupier < 17 / pioche
+TourCroupier --> FinPartie : score croupier >= 17
+
+FinPartie --> AttenteMise : rejouer
+FinPartie --> [*] : logout ou quitter
+
+note right of TourJoueur
+  Le joueur choisit une action :
+  Hit, Stand ou Double.
+end note
+
+note right of FinPartie
+  La methode check_results()
+  compare les scores et met
+  a jour les jetons du joueur.
+end note
+
+@enduml

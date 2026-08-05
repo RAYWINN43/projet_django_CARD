@@ -1,0 +1,75 @@
+@startuml
+!theme toy
+title Diagramme de classes - BlackJack Django
+
+class User {
+  +id
+  +username
+  +email
+  +password
+  +first_name
+  +last_name
+  +is_staff
+  +is_superuser
+}
+
+class Profile {
+  +id
+  +jetons
+  +user
+}
+
+class Game {
+  +id
+  +player_bank
+  +pool
+  +bet_value
+  +draw_pile
+  +discard_pile
+  +player_hand
+  +croupier_hand
+  +running
+  +new_game(bet, profile)
+  +hit()
+  +stop()
+  +double()
+  +check_results()
+}
+
+class Player {
+  +bank
+  +add_to_bank(amount)
+  +get_bank()
+}
+
+class Deck {
+  +cards
+  +visible
+  +visible_first
+  +init_deck()
+  +draw()
+  +add(card)
+  +add_many(cards)
+  +hand_value()
+  +to_dict()
+  +from_dict(payload)
+}
+
+class Card {
+  +value
+  +true_value
+  +suit
+  +to_dict()
+  +from_dict(payload)
+}
+
+User "1" -- "1" Profile : possede
+Profile "1" -- "0..*" Game : joue
+Game "1" -- "1" Player : utilise
+Game "1" -- "1" Deck : draw_pile
+Game "1" -- "1" Deck : discard_pile
+Game "1" -- "1" Deck : player_hand
+Game "1" -- "1" Deck : croupier_hand
+Deck "1" -- "0..52" Card : contient
+
+@enduml
