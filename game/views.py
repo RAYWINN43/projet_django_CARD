@@ -15,8 +15,9 @@ def launch_game(request):
     except (TypeError, ValueError):
         bet_value = 30
 
+    profile = request.user.profile if request.user.is_authenticated else None
     game = Game.objects.create()
-    game.new_game(bet=bet_value)
+    game.new_game(bet=bet_value, profile=profile)
     return redirect("launch_game_id", game_id=game.id)
 
 
@@ -27,6 +28,8 @@ def play_game(request, game_id):
 
 def play_turn(request, game_id, move):
     game = Game.objects.get(id=game_id)
+    if request.user.is_authenticated:
+        game.profile = request.user.profile
     match move:
         case "hit":
             done = game.hit()
