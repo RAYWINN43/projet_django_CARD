@@ -8,14 +8,20 @@ def game_page(request, game_id=None):
 
 
 def launch_game(request):
+    bet_value_raw = request.GET.get("bet")
+
+    try:
+        bet_value = int(bet_value_raw)
+    except (TypeError, ValueError):
+        bet_value = 30
+
     game = Game.objects.create()
-    game.new_game(bet=30)
-    return render(request, "game.html", {"game": game})
+    game.new_game(bet=bet_value)
+    return redirect("launch_game_id", game_id=game.id)
 
 
 def play_game(request, game_id):
     game = Game.objects.get(id=game_id)
-    game.new_game(bet=30)
     return render(request, "game.html", {"game": game})
 
 
@@ -34,6 +40,7 @@ def play_turn(request, game_id, move):
     if done:
         log = game.check_results()
         print(log)
+        return redirect("game_page")
 
     return render(request, "game.html", {"game": game})
 

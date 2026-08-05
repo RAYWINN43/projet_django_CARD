@@ -125,9 +125,10 @@ class Game(models.Model) :
         self._discard_pile = Deck.from_dict(self.discard_pile)
         self._player_hand = Deck.from_dict(self.player_hand)
         self._croupier_hand = Deck.from_dict(self.croupier_hand)
-        self.running = self.running
+        self._running = self.running
 
     def save(self, *args, **kwargs) :
+        self.running = self._running
         self.player_bank = self.player.bank
         self.draw_pile = self._draw_pile.to_dict()
         self.discard_pile = self._discard_pile.to_dict()
@@ -136,6 +137,7 @@ class Game(models.Model) :
         super().save(*args, **kwargs)
 
     def new_game(self, bet) :
+        print("Nouvelle partie")
         self.player = Player(bank=self.player_bank)
         self._draw_pile = Deck(visible=True)
         self._draw_pile.init_deck()
@@ -144,7 +146,7 @@ class Game(models.Model) :
         self._croupier_hand = Deck(visible=False)
         self.pool = 0
         self.bet_value = 0
-        self.running = True
+        self._running = True
         self.setup(bet=bet)
         self.save()
 
@@ -168,6 +170,7 @@ class Game(models.Model) :
         for _ in range(2) :
             self.player_draw()
             self.croupier_draw()
+        self.display_game()
 
     def display_game(self) :
         print(f"""
@@ -179,27 +182,39 @@ class Game(models.Model) :
         Défausse : {self._discard_pile}""")
 
     def hit(self) :
-        self.player_draw()
-        if self._player_hand.hand_value() > 21 :
-            return True
-        else :
-            return False
+        if self._running :
+            print("Piocher")
+            self.player_draw()
+            self.save()
+            if self._player_hand.hand_value() > 21 :
+                return True
+            else :
+                return False
 
     def stop(self) :
-        return True
+        if self._running :
+            print("Rester")
+            self.save()
+            return True
 
     def double(self) :
-        self.player.add_to_bank(-self.bet_value)
-        self.pool += self.bet_value
-        self.player_draw()
-        return True
+        if self._running :
+            print("Doubler")
+            self.player.add_to_bank(-self.bet_value)
+            self.pool += self.bet_value
+            self.player_draw()
+            self.save()
+            return True
 
     def check_results(self) :
-        if self.running :
+        if self._running :
+            print("Fin de la partie")
             self.running = False
+            self._running = False
             self._croupier_hand.set_visible()
             player_score = self._player_hand.hand_value()
             croupier_score = self._croupier_hand.hand_value()
+            self.display_game()
             log = f"""
             Joueur : {player_score}
             Croupier : {croupier_score}"""
@@ -211,6 +226,7 @@ class Game(models.Model) :
             else :
                 log += "\nÉgalité"
             self.player.add_to_bank(self.pool)
+            self.save()
             return log
 
 
