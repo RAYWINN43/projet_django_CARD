@@ -105,6 +105,12 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 12,
+        },
+    },
+    {
+        'NAME': 'accounts.validators.PasswordCompositionValidator',
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -136,9 +142,13 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Redirections authentification
 LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "home"
+LOGIN_REDIRECT_URL = "avatar"
 LOGOUT_REDIRECT_URL = "login"
 
 
+# Session joueur
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SAVE_EVERY_REQUEST = True
+
 # Securite CSRF
-CSRF_COOKIE_AGE = 60 * 60 #TOKEN TEMPS 1H 
+CSRF_COOKIE_AGE = None
