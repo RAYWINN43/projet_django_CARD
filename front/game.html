@@ -1,3 +1,5 @@
+{% load static %}
+
 <!doctype html>
 <html lang="fr">
   <head>
@@ -5,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Interface de jeu du jeu BlackJack."
+      content="Table de jeu du BlackJack : mise, pioche et actions de la partie."
     />
     <title>BlackJack — Partie</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -14,83 +16,272 @@
       href="https://fonts.googleapis.com/css2?family=Coiny&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css" />
-    <script src="app.js" defer></script>
+    <link rel="stylesheet" href="{% static 'styles.css' %}" />
+    <link rel="stylesheet" href="{% static 'game.css' %}" />
+    <script src="{% static 'game.js' %}" defer></script>
   </head>
 
-  <body>
-    <div id="status">À vous de jouer</div>
-    <button class="action_button" id="launch" onclick="launch()" style="visibility: visible;">Lancer</button>
-    <button class="action_button" id="hit" onclick="play_turn('hit')" style="visibility: hidden;">Piocher</button>
-    <button class="action_button" id="double" onclick="play_turn('double')" style="visibility: hidden;">Doubler</button>
-    <button class="action_button" id="stop" onclick="play_turn('stop')" style="visibility: hidden;">Rester</button>
+  <body class="game-page">
+    <main
+      class="game-shell"
+      data-game-page
+      data-assets-base="{% static 'assets/' %}"
+      data-game-id="{{ game.id|default:'' }}"
+      data-has-game="{% if game %}true{% else %}false{% endif %}"
+      data-game-detail-url="{% if game %}{% url 'launch_game_id' game.id %}{% endif %}"
+      data-game-bet="{{ game.bet_value|default:0 }}"
+      data-game-pool="{{ game.pool|default:0 }}"
+      data-player-bank="{{ game.player_bank|default:0 }}"
+      data-game-running="{% if game and game.running %}true{% else %}false{% endif %}"
+    >
+      <div class="game-brand" aria-label="BlackJack">
+        <img src="{% static 'assets/blackjack.png' %}" alt="" />
+        <span class="brand-title">BlackJack</span>
+      </div>
 
-    <dialog id="bet-dialog">
-      <form method="dialog">
-        <p>Choisissez votre mise</p>
-        <label for="bet-select">Mise :</label>
-        <select id="bet-select">
-          <option value="10">10</option>
-          <option value="20">20</option>
-          <option value="30" selected>30</option>
-          <option value="40">40</option>
-          <option value="50">50</option>
-        </select>
-        <div>
-          <button type="button" id="cancel-bet">Annuler</button>
-          <button type="button" id="confirm-bet">Lancer</button>
+      <aside class="game-player-summary" aria-label="Profil du joueur">
+        <img
+          class="game-player-summary__portrait"
+          src="{% static 'assets/utilisateur.png' %}"
+          alt="Avatar du profil"
+        />
+        <p class="game-player-summary__name">{{ user.username|default:"Snowlly" }}</p>
+      </aside>
+
+      <div class="game-avatar-sources" hidden>
+        <span
+          data-game-avatar-id="homme-lunettes"
+          data-game-avatar-src="{% static 'assets/homme.png' %}"
+        ></span>
+        <span
+          data-game-avatar-id="femme-rose"
+          data-game-avatar-src="{% static 'assets/fille.png' %}"
+        ></span>
+        <span
+          data-game-avatar-id="femme-bleu"
+          data-game-avatar-src="{% static 'assets/fille (1).png' %}"
+        ></span>
+        <span
+          data-game-avatar-id="homme-manteau"
+          data-game-avatar-src="{% static 'assets/homme (2).png' %}"
+        ></span>
+        <span
+          data-game-avatar-id="homme-barbe"
+          data-game-avatar-src="{% static 'assets/homme (1).png' %}"
+        ></span>
+      </div>
+
+      <section
+        class="game-versus{% if not game %} game-versus--bet{% endif %}"
+        aria-label="Bernard Tapis contre {{ user.username|default:'Snowlly' }}"
+      >
+        <figure class="game-contender game-contender--dealer">
+          <img src="{% static 'assets/croupier.png' %}" alt="Croupier" />
+          {% if not game %}<figcaption>Bernard Tapis</figcaption>{% endif %}
+        </figure>
+
+        <img class="game-versus__icon" src="{% static 'assets/vs.png' %}" alt="Contre" />
+
+        <figure class="game-contender game-contender--player">
+          <img
+            data-game-player-avatar
+            src="{% static 'assets/homme (2).png' %}"
+            alt="Personnage du joueur"
+          />
+          {% if not game %}<figcaption>{{ user.username|default:"Snowlly" }}</figcaption>{% endif %}
+        </figure>
+      </section>
+
+      {% if game %}
+        <aside
+          class="game-phone"
+          aria-labelledby="game-phone-title"
+          data-game-recap
+          data-game-starting-bet="{{ game.bet_value }}"
+          data-game-current-bet="{{ game.pool }}"
+        >
+          <span class="game-phone__notch" aria-hidden="true">
+            <span class="game-phone__camera"></span>
+          </span>
+          <span class="game-phone__battery" aria-hidden="true">50%</span>
+
+          <h2 class="game-phone__title" id="game-phone-title">RECAP</h2>
+
+          <p class="game-phone__starting-bet">
+            <span>Mise de départ :</span>
+            <strong>{{ game.bet_value }} €</strong>
+          </p>
+
+          <div class="game-phone__current-bet">
+            <span>MISE ACTUELLE</span>
+            <output data-game-current-bet>{{ game.pool }} €</output>
+          </div>
+
+          <nav class="game-actions" aria-label="Actions de la partie">
+            <a
+              class="game-action game-action--continue"
+              data-game-action
+              data-game-action-type="hit"
+              href="{% url 'play_turn' game.id 'hit' %}"
+            >
+              Continuer
+            </a>
+            <a
+              class="game-action game-action--double"
+              data-game-action
+              data-game-action-type="double"
+              href="{% url 'play_turn' game.id 'double' %}"
+            >
+              DOUBLER
+            </a>
+            <a
+              class="game-action game-action--stop"
+              data-game-action
+              data-game-action-type="stop"
+              href="{% url 'play_turn' game.id 'stop' %}"
+            >
+              STOP
+            </a>
+          </nav>
+        </aside>
+      {% endif %}
+
+      <section class="game-table" aria-label="Table de BlackJack">
+        {% if not game %}<span class="game-bet-watermark" aria-hidden="true">VERSUS</span>{% endif %}
+
+        <div class="game-deck" aria-label="Pioche face cachée">
+          <img src="{% static 'assets/068-card deck.png' %}" alt="Paquet de cartes face cachée" />
         </div>
-      </form>
+
+        <section class="game-hand game-hand--dealer" aria-label="Main du croupier" data-dealer-hand></section>
+
+        <section class="game-hand game-hand--player" aria-label="Main du joueur" data-player-hand></section>
+
+        {% if game %}
+          {{ game.croupier_hand|json_script:"dealer-hand-data" }}
+          {{ game.player_hand|json_script:"player-hand-data" }}
+        {% else %}
+          <form class="bet-bar" method="get" action="{% url 'launch_game' %}" data-bet-form>
+            <label class="bet-bar__label" for="bet-value">Choix de la mise</label>
+            <input
+              class="bet-bar__input"
+              id="bet-value"
+              name="bet"
+              type="number"
+              value="0"
+              min="1"
+              step="1"
+              inputmode="numeric"
+              aria-describedby="bet-help"
+            />
+            <span class="sr-only" id="bet-help">Saisissez une mise entière supérieure à zéro.</span>
+            <button class="bet-bar__submit" type="submit" aria-label="Valider la mise et distribuer les cartes">
+              <svg viewBox="0 0 64 64" aria-hidden="true">
+                <path d="M9 32h43M35 14l18 18-18 18" />
+              </svg>
+            </button>
+          </form>
+        {% endif %}
+
+        <p class="sr-only" data-game-status aria-live="polite">
+          {% if game %}
+            Partie en cours. Mise : {{ game.bet_value }}. Banque : {{ game.player_bank }}.
+          {% else %}
+            Choisissez votre mise pour commencer la partie.
+          {% endif %}
+        </p>
+      </section>
+
+      <div class="game-settings-menu" data-game-settings-menu>
+        <div
+          class="game-settings-panel"
+          id="game-settings-panel"
+          data-game-settings-panel
+          aria-hidden="true"
+        >
+          <form class="game-settings-action game-settings-action--logout" method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" aria-label="Se déconnecter">
+              <img src="{% static 'assets/se-deconnecter.png' %}" alt="" />
+            </button>
+          </form>
+
+          <button
+            class="game-settings-action game-settings-action--rules"
+            type="button"
+            data-game-open-rules
+            aria-label="Afficher les règles du jeu"
+          >
+            <img src="{% static 'assets/demander-de-laide.png' %}" alt="" />
+          </button>
+
+          <button
+            class="game-settings-action game-settings-action--history"
+            type="button"
+            data-game-open-history
+            aria-label="Afficher l’historique des parties"
+          >
+            <img src="{% static 'assets/ordre.png' %}" alt="" />
+          </button>
+
+          <button
+            class="game-settings-action game-settings-action--sound"
+            type="button"
+            data-game-sound-toggle
+            data-muted-src="{% static 'assets/volume-coupe.png' %}"
+            data-sound-src="{% static 'assets/monter-le-son (1).png' %}"
+            aria-label="Activer le son"
+            aria-pressed="true"
+          >
+            <img data-game-sound-icon src="{% static 'assets/volume-coupe.png' %}" alt="" />
+          </button>
+        </div>
+
+        <button
+          class="game-settings-toggle"
+          type="button"
+          data-game-settings-toggle
+          aria-label="Ouvrir les paramètres"
+          aria-controls="game-settings-panel"
+          aria-expanded="false"
+        >
+          <img src="{% static 'assets/parametres.png' %}" alt="" />
+        </button>
+      </div>
+    </main>
+
+    <dialog class="game-rules-dialog" data-game-rules-dialog aria-labelledby="game-rules-title">
+      <div class="game-rules-dialog__content">
+        <h2 id="game-rules-title">Règles du BlackJack</h2>
+        <ul>
+          <li>Approchez-vous de 21 sans dépasser ce total.</li>
+          <li>Les figures valent 10 et l’as vaut 1 ou 11.</li>
+          <li>Continuer permet de piocher, Stop termine votre tour.</li>
+          <li>Doubler double la mise et ajoute une dernière carte.</li>
+        </ul>
+        <button type="button" data-game-close-rules>FERMER</button>
+      </div>
     </dialog>
-    
-    <script>
-        const gameId = "{{ game.id|default:'' }}";
 
-        const launchButton = document.getElementById("launch");
-        const hitButton = document.getElementById("hit");
-        const doubleButton = document.getElementById("double");
-        const stopButton = document.getElementById("stop");
-        const betDialog = document.getElementById("bet-dialog");
-        const betSelect = document.getElementById("bet-select");
-        const confirmBetButton = document.getElementById("confirm-bet");
-        const cancelBetButton = document.getElementById("cancel-bet");
+    <dialog class="game-history-dialog" data-game-history-dialog aria-labelledby="game-history-title">
+      <div class="game-history-dialog__content">
+        <header class="game-history-dialog__header">
+          <h2 id="game-history-title">Historique des parties</h2>
+          <button type="button" data-game-close-history aria-label="Fermer l’historique">
+            <svg viewBox="0 0 32 32" aria-hidden="true">
+              <path d="M8 8l16 16M24 8L8 24" />
+            </svg>
+          </button>
+        </header>
 
-        function syncButtons() {
-            const hasGame = Boolean(gameId);
-
-            launchButton.style.visibility = hasGame ? "hidden" : "visible";
-            hitButton.style.visibility = hasGame ? "visible" : "hidden";
-            doubleButton.style.visibility = hasGame ? "visible" : "hidden";
-            stopButton.style.visibility = hasGame ? "visible" : "hidden";
-        }
-
-        function launch() {
-            betDialog.showModal();
-        }
-
-        function startGameWithBet() {
-            const bet = Number(betSelect.value);
-            if (!Number.isInteger(bet) || bet <= 0) {
-                return;
-            }
-
-            betDialog.close();
-            window.location.href = `/game/launch?bet=${bet}`;
-        }
-
-        function play_turn(move) {
-            if (!gameId) {
-                launch();
-                return;
-            }
-
-            window.location.href = `/game/${gameId}/play/${move}`;
-        }
-
-        confirmBetButton.addEventListener("click", startGameWithBet);
-        cancelBetButton.addEventListener("click", () => betDialog.close());
-        document.addEventListener("DOMContentLoaded", syncButtons);
-    </script>
+        <div class="game-history-list" data-game-history-list>
+          <div class="game-history-empty" data-game-history-empty>
+            <img src="{% static 'assets/ordre.png' %}" alt="" />
+            <p>Aucune partie terminée pour le moment.</p>
+            <span>Vos gains, pertes et cartes tirées apparaîtront ici.</span>
+          </div>
+        </div>
+      </div>
+    </dialog>
   </body>
-
 </html>
