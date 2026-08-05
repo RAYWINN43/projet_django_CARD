@@ -483,6 +483,28 @@ form.settings-action {
   }
 }
 
+@media (min-width: 1501px) and (min-height: 901px) and (max-height: 1050px) {
+  .avatar-picker {
+    transform: translateX(-50%) scale(0.88);
+    transform-origin: top center;
+  }
+
+  .launch-game-button {
+    top: calc(13.84vh + 664px);
+    bottom: auto;
+    width: 454px;
+    height: 72px;
+    box-shadow: 0 10px 0 var(--color-button-shadow);
+    font-size: 29px;
+  }
+
+  .launch-game-button:active {
+    top: calc(13.84vh + 666px);
+    bottom: auto;
+    box-shadow: 0 5px 0 var(--color-button-shadow);
+  }
+}
+
 @media (max-width: 1500px), (max-height: 900px) {
   .avatar-page {
     --avatar-card-height: 500px;
