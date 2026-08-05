@@ -170,6 +170,8 @@ class Game(models.Model) :
         for _ in range(2) :
             self.player_draw()
             self.croupier_draw()
+        while self._croupier_hand.hand_value() < 17 :
+            self.croupier_draw()
         self.display_game()
 
     def display_game(self) :
