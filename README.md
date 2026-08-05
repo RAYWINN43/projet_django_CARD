@@ -153,5 +153,5 @@ Ces commandes sont integrees dans la CI GitHub pour verifier en auto le projet a
 
 ### Capture d'ecran de l'interface principale
 page admin de django : ![](src/ADMINDJANGO.png)
-maquette Figma : ![](images/Maquettes FIGMA.png)
-en jeux : ![](images/Screen in game.png)
+maquette Figma : ![](src/Maquettes FIGMA.png)
+en jeux : ![](src/Screen in game.png)
