@@ -1,15 +1,19 @@
-from django.contrib.auth import get_user_model, login
+from django.contrib.auth import get_user_model, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
 
 @login_required
-def home(request):
-    return HttpResponse(f"Bienvenue {request.user.username}, tu es connecte.")
+def avatar(request):
+    return render(request, "avatar.html")
+
+
+def logout_view(request):
+    logout(request)
+    return redirect("login")
 
 
 @require_POST
@@ -68,4 +72,4 @@ def register(request):
     user.save()
     login(request, user)
 
-    return redirect("home")
+    return redirect("avatar")

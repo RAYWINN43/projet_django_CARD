@@ -24,6 +24,24 @@
     <button class="action_button" id="hit" onclick="play_turn('hit')" style="visibility: hidden;">Piocher</button>
     <button class="action_button" id="double" onclick="play_turn('double')" style="visibility: hidden;">Doubler</button>
     <button class="action_button" id="stop" onclick="play_turn('stop')" style="visibility: hidden;">Rester</button>
+
+    <dialog id="bet-dialog">
+      <form method="dialog">
+        <p>Choisissez votre mise</p>
+        <label for="bet-select">Mise :</label>
+        <select id="bet-select">
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="30" selected>30</option>
+          <option value="40">40</option>
+          <option value="50">50</option>
+        </select>
+        <div>
+          <button type="button" id="cancel-bet">Annuler</button>
+          <button type="button" id="confirm-bet">Lancer</button>
+        </div>
+      </form>
+    </dialog>
     
     <script>
         const gameId = "{{ game.id|default:'' }}";
@@ -32,6 +50,10 @@
         const hitButton = document.getElementById("hit");
         const doubleButton = document.getElementById("double");
         const stopButton = document.getElementById("stop");
+        const betDialog = document.getElementById("bet-dialog");
+        const betSelect = document.getElementById("bet-select");
+        const confirmBetButton = document.getElementById("confirm-bet");
+        const cancelBetButton = document.getElementById("cancel-bet");
 
         function syncButtons() {
             const hasGame = Boolean(gameId);
@@ -43,7 +65,17 @@
         }
 
         function launch() {
-            window.location.href = "/game/launch";
+            betDialog.showModal();
+        }
+
+        function startGameWithBet() {
+            const bet = Number(betSelect.value);
+            if (!Number.isInteger(bet) || bet <= 0) {
+                return;
+            }
+
+            betDialog.close();
+            window.location.href = `/game/launch?bet=${bet}`;
         }
 
         function play_turn(move) {
@@ -55,6 +87,8 @@
             window.location.href = `/game/${gameId}/play/${move}`;
         }
 
+        confirmBetButton.addEventListener("click", startGameWithBet);
+        cancelBetButton.addEventListener("click", () => betDialog.close());
         document.addEventListener("DOMContentLoaded", syncButtons);
     </script>
   </body>

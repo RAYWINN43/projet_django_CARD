@@ -75,6 +75,9 @@ WSGI_APPLICATION = 'django_intro.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
+REDIS_HOST = os.environ.get("REDIS_HOST")
+REDIS_PORT = os.environ.get("REDIS_PORT", "6379")
+REDIS_DB = os.environ.get("REDIS_DB", "1")
 
 if POSTGRES_HOST:
     DATABASES = {
@@ -96,6 +99,20 @@ else:
     }
 
 
+if REDIS_HOST:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}",
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            },
+        }
+    }
+    SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+    SESSION_CACHE_ALIAS = "default"
+
+
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
@@ -105,6 +122,12 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 12,
+        },
+    },
+    {
+        'NAME': 'accounts.validators.PasswordCompositionValidator',
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -136,9 +159,14 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Redirections authentification
 LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "home"
+LOGIN_REDIRECT_URL = "avatar"
 LOGOUT_REDIRECT_URL = "login"
 
 
+# Session joueur
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SAVE_EVERY_REQUEST = True
+
 # Securite CSRF
-CSRF_COOKIE_AGE = 60 * 60 #TOKEN TEMPS 1H 
+CSRF_COOKIE_AGE = None
+CSRF_USE_SESSIONS = True
