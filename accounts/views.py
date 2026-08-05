@@ -7,8 +7,8 @@ from django.views.decorators.http import require_POST
 
 
 @login_required
-def home(request):
-    return render(request, "avatard.html")
+def avatar(request):
+    return render(request, "avatar.html")
 
 
 def logout_view(request):
@@ -72,4 +72,4 @@ def register(request):
     user.save()
     login(request, user)
 
-    return redirect("home")
+    return redirect("avatar")

@@ -142,7 +142,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Redirections authentification
 LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "home"
+LOGIN_REDIRECT_URL = "avatar"
 LOGOUT_REDIRECT_URL = "login"
 
 
