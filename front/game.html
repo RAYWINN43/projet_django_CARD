@@ -92,7 +92,7 @@
         </figure>
       </section>
 
-      {% if game %}
+      {% if game and game.running %}
         <aside
           class="game-phone"
           aria-labelledby="game-phone-title"
@@ -160,7 +160,9 @@
         {% if game %}
           {{ game.croupier_hand|json_script:"dealer-hand-data" }}
           {{ game.player_hand|json_script:"player-hand-data" }}
-        {% else %}
+        {% endif %}
+
+        {% if not game or not game.running %}
           <form class="bet-bar" method="get" action="{% url 'launch_game' %}" data-bet-form>
             <label class="bet-bar__label" for="bet-value">Choix de la mise</label>
             <input
@@ -184,8 +186,10 @@
         {% endif %}
 
         <p class="sr-only" data-game-status aria-live="polite">
-          {% if game %}
+          {% if game and game.running %}
             Partie en cours. Mise : {{ game.bet_value }}. Banque : {{ game.player_bank }}.
+          {% elif game %}
+            Partie terminée. Lancez une nouvelle partie pour rejouer.
           {% else %}
             Choisissez votre mise pour commencer la partie.
           {% endif %}
