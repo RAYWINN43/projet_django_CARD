@@ -101,7 +101,9 @@ class ProfileAdmin(admin.ModelAdmin):
             id=profile_id,
         )
         games = list(
-            profile.games.prefetch_related("moves").order_by("-created_at")[:30]
+            profile.games.prefetch_related("moves", "decks__cards").order_by(
+                "-created_at"
+            )[:30]
         )
         total_gain = 0
         game_history = []

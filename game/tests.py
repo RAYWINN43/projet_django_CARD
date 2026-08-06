@@ -4,20 +4,22 @@ from django.urls import reverse
 
 from accounts.models import Profile
 
-from .game_engine import Card, Deck, GameRuleError, Player, evaluate_round
-from .models import Game, GameResult, GameState, MoveLog
+from . import game_engine
+from .models import Card, Game, GameResult, GameState, MoveLog
 
 
 class GameEngineTests(TestCase):
     def test_fresh_deck_contains_52_unique_cards(self):
-        deck = Deck()
+        deck = game_engine.Deck()
         deck.init_deck()
 
         self.assertEqual(len(deck.cards), 52)
         self.assertEqual(len({(card.value, card.suit) for card in deck.cards}), 52)
 
     def test_draw_removes_one_card(self):
-        deck = Deck(cards=[Card(2, "clubs"), Card(3, "spades")])
+        deck = game_engine.Deck(
+            cards=[game_engine.Card(2, "clubs"), game_engine.Card(3, "spades")]
+        )
 
         drawn = deck.draw()
 
@@ -25,28 +27,36 @@ class GameEngineTests(TestCase):
         self.assertEqual(len(deck.cards), 1)
 
     def test_ace_is_worth_eleven_when_it_does_not_bust(self):
-        hand = Deck(cards=[Card(10, "spades"), Card(1, "hearts")])
+        hand = game_engine.Deck(
+            cards=[game_engine.Card(10, "spades"), game_engine.Card(1, "hearts")]
+        )
 
         self.assertEqual(hand.hand_value(), 21)
 
     def test_multiple_aces_are_counted_safely(self):
-        hand = Deck(cards=[Card(1, "spades"), Card(1, "hearts"), Card(9, "clubs")])
+        hand = game_engine.Deck(
+            cards=[
+                game_engine.Card(1, "spades"),
+                game_engine.Card(1, "hearts"),
+                game_engine.Card(9, "clubs"),
+            ]
+        )
 
         self.assertEqual(hand.hand_value(), 21)
 
     def test_player_cannot_debit_invalid_or_unavailable_amount(self):
-        player = Player(bank=20)
+        player = game_engine.Player(bank=20)
 
-        with self.assertRaises(GameRuleError):
+        with self.assertRaises(game_engine.GameRuleError):
             player.debit(0)
-        with self.assertRaises(GameRuleError):
+        with self.assertRaises(game_engine.GameRuleError):
             player.debit(21)
         self.assertEqual(player.bank, 20)
 
     def test_round_evaluator_handles_player_dealer_and_draw(self):
-        self.assertEqual(evaluate_round(20, 18).winner, "player")
-        self.assertEqual(evaluate_round(22, 18).winner, "dealer")
-        self.assertEqual(evaluate_round(18, 18).winner, "draw")
+        self.assertEqual(game_engine.evaluate_round(20, 18).winner, "player")
+        self.assertEqual(game_engine.evaluate_round(22, 18).winner, "dealer")
+        self.assertEqual(game_engine.evaluate_round(18, 18).winner, "draw")
 
 
 class GameModelTests(TestCase):
@@ -71,7 +81,9 @@ class GameModelTests(TestCase):
         reloaded_game = Game.objects.get(id=game.id)
         self.profile.refresh_from_db()
 
-        self.assertEqual(len(reloaded_game._player_hand.cards), 2)
+        self.assertEqual(reloaded_game.player_deck.cards.count(), 2)
+        self.assertEqual(reloaded_game.decks.count(), 4)
+        self.assertEqual(Card.objects.filter(deck__game=reloaded_game).count(), 52)
         self.assertEqual(reloaded_game.state, GameState.PLAYER_TURN)
         self.assertEqual(reloaded_game.player_bank, 470)
         self.assertEqual(self.profile.jetons, 470)
@@ -80,7 +92,7 @@ class GameModelTests(TestCase):
     def test_negative_and_overdraft_bets_are_rejected(self):
         for invalid_bet in (-10, 0, 501):
             game = Game(profile=self.profile, player_bank=self.profile.jetons)
-            with self.assertRaises(GameRuleError):
+            with self.assertRaises(game_engine.GameRuleError):
                 game.new_game(bet=invalid_bet)
 
         self.profile.refresh_from_db()
@@ -92,7 +104,7 @@ class GameModelTests(TestCase):
         Game.objects.get(id=game.id).hit()
         reloaded_game = Game.objects.get(id=game.id)
 
-        self.assertEqual(len(reloaded_game._player_hand.cards), 3)
+        self.assertEqual(reloaded_game.player_deck.cards.count(), 3)
         self.assertTrue(reloaded_game.moves.filter(move=MoveLog.Move.HIT).exists())
 
     def test_double_updates_pool_bank_state_and_log(self):
@@ -112,7 +124,7 @@ class GameModelTests(TestCase):
         self.profile.save(update_fields=["jetons"])
         game = self.make_game(bet=30)
 
-        with self.assertRaises(GameRuleError):
+        with self.assertRaises(game_engine.GameRuleError):
             game.double()
 
         self.assertEqual(game.pool, 30)
@@ -120,8 +132,12 @@ class GameModelTests(TestCase):
 
     def test_check_results_finishes_game_and_credits_winner(self):
         game = self.make_game()
-        game._player_hand = Deck(cards=[Card(10, "hearts"), Card(10, "clubs")])
-        game._croupier_hand = Deck(cards=[Card(10, "spades"), Card(8, "diamonds")])
+        game.player_deck.replace_cards(
+            [game_engine.Card(10, "hearts"), game_engine.Card(10, "clubs")]
+        )
+        game.croupier_deck.replace_cards(
+            [game_engine.Card(10, "spades"), game_engine.Card(8, "diamonds")]
+        )
         game.state = GameState.DEALER_TURN
 
         outcome = game.check_results()

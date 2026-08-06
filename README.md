@@ -28,7 +28,7 @@ Une égalité rend la mise ; une victoire rend la mise et crédite un gain ident
 - Docker avec Docker Compose ;
 - Git.
 
-### Installation en une commande
+### Installation
 
 ```powershell
 git clone https://github.com/RAYWINN43/projet_django_CARD
@@ -36,6 +36,11 @@ cd projet_django_CARD
 copy .env.example .env
 docker compose up --build
 ```
+
+Avant le premier lancement, remplacer les valeurs `CHANGE-ME-*` de `.env`.
+Pour une installation locale standard, utiliser `POSTGRES_PORT=5432` et
+`REDIS_PORT=6379`. Les mots de passe et la clé secrète d'exemple doivent être
+remplacés avant tout déploiement public.
 
 L’application est ensuite accessible sur <http://127.0.0.1:8000/> et
 l’administration sur <http://127.0.0.1:8000/admin/>.
@@ -81,13 +86,31 @@ local sans certificat TLS.
 
 Le projet suit l’architecture MVT :
 
-- **Models** : `Profile`, `Game` et `MoveLog` stockent joueurs, parties, état,
-  cartes, mises et historique ;
+- **Models** : `Profile`, `Game`, `Deck`, `Card` et `MoveLog` stockent joueurs,
+  parties, paquets, cartes, mises et historique ;
 - **Views** : authentification, validation des formulaires, permissions et
   orchestration transactionnelle des actions ;
 - **Templates** : écrans d’accueil, authentification, avatar et table de jeu ;
-- **Moteur** : `game/game_engine.py` contient les objets purs `Card`, `Deck`,
-  `Player`, le mélange, le calcul des points et l’évaluation du résultat.
+- **Moteur** : `game/game_engine.py` contient les objets de règles purs utilisés
+  pour le mélange, le calcul des points, la banque et l'évaluation du résultat.
+
+### Modèle de persistance des cartes
+
+Les cartes d'une partie ne sont plus sérialisées dans des champs JSON de
+`Game`. Chaque partie possède quatre lignes ORM `Deck`, identifiées par une
+zone unique : pioche, défausse, main du joueur et main du croupier. Chaque ligne
+`Card` référence son paquet et conserve sa valeur, son enseigne et sa position.
+
+La relation est donc `Game 1─4 Deck 1─n Card`. La contrainte
+`unique_deck_zone_per_game` empêche la création de deux pioches identiques pour
+une même partie, l'index `(deck, position)` accélère la distribution et une
+contrainte garantit une valeur comprise entre 1 et 13. La migration `0004`
+convertit automatiquement les anciennes parties JSON vers ces tables.
+
+Les règles restent testables indépendamment de Django : le modèle `Deck`
+délègue le mélange et le calcul d'une main aux objets purs du moteur. Le JSON de
+`MoveLog.card` est volontairement conservé comme instantané historique immuable
+de la carte jouée au moment du coup.
 
 Les règles ne dépendent donc ni des requêtes HTTP ni du rendu HTML. Les vues
 n’acceptent les mises et coups qu’en `POST`, valident le CSRF, verrouillent la
@@ -152,11 +175,12 @@ uv run python manage.py test
 uv run python manage.py check
 ```
 
-La suite couvre notamment le paquet de 52 cartes, la pioche, les as multiples,
-les scores, les mises invalides, le double sans solde, les transitions d’état,
-les journaux de coups, l’authentification, les permissions de propriété, POST et
-CSRF. GitHub Actions exécute migrations, tests, Black, Ruff et le system check à
-chaque push et pull request ciblé.
+La suite couvre notamment le paquet de 52 cartes, leur persistance ORM, les
+quatre zones d'une partie, la pioche, les as multiples, les scores, les mises
+invalides, le double sans solde, les transitions d'état, les journaux de coups,
+l'authentification, les permissions de propriété, POST et CSRF. GitHub Actions
+exécute migrations, tests, Black, Ruff et le system check à chaque push et pull
+request ciblé.
 
 ## Journal d’architecture
 
@@ -173,8 +197,9 @@ membre doit être capable d’expliquer les portions qu’il présente.
 
 ### Difficultés et solutions
 
-- **Persistance d’une partie** : les objets du moteur sont sérialisés dans les
-  champs JSON de `Game`, puis reconstruits à chaque requête.
+- **Persistance d'une partie** : une première version sérialisait les cartes
+  dans `Game`. Une migration de données les convertit désormais en modèles ORM
+  `Deck` et `Card`, sans perdre les parties existantes.
 - **Séparation MVT/SRP** : le calcul des cartes a été extrait des vues vers un
   moteur Python pur, ce qui rend les règles testables sans navigateur.
 - **Actions concurrentes et triche côté client** : mises et coups sont validés
@@ -189,3 +214,17 @@ membre doit être capable d’expliquer les portions qu’il présente.
 Capture de l’administration Django :
 
 ![Administration Django](src/ADMINDJANGO.png)
+
+## Auto-évaluation
+
+| Domaine de la grille | Estimation | Justification |
+| --- | ---: | --- |
+| Backend Django | **5,4 / 6** | Modèles ORM indexés, moteur séparé, transactions, permissions et validation serveur. |
+| UI/UX | **4,4 / 5** | Design tokens, composants réutilisables, responsive, accessibilité, animations et sound design. |
+| Infrastructure | **3,7 / 5** | Docker, PostgreSQL, Redis, volumes, utilisateur non-root et healthchecks ; validation finale sur un environnement Docker vierge encore nécessaire. |
+| Tests, qualité et CI | **3,6 / 4** | Tests métier et sécurité, Black, Ruff et pipeline GitHub Actions ; couverture et E2E navigateur à renforcer. |
+| **Total estimé** | **17,1 / 20** | Estimation technique avant soutenance et validation Docker finale. |
+
+Les quatre critères éliminatoires sont vérifiés avant le rendu avec une
+installation Docker vierge, une partie complète, les schémas à jour et une
+répartition orale permettant à chaque membre d'expliquer le code présenté.

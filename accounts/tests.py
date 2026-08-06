@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from game.models import Game, GameResult, GameState, MoveLog
+from game.models import Card, Deck, Game, GameResult, GameState, MoveLog
 
 
 class AdminPlayerDashboardTests(TestCase):
@@ -30,20 +30,6 @@ class AdminPlayerDashboardTests(TestCase):
             pool=20,
             bet_value=20,
             running=False,
-            player_hand={
-                "visible": True,
-                "cards": [
-                    {"value": 1, "suit": "spades", "true_value": 1},
-                    {"value": 10, "suit": "hearts", "true_value": 10},
-                ],
-            },
-            croupier_hand={
-                "visible": True,
-                "cards": [
-                    {"value": 10, "suit": "clubs", "true_value": 10},
-                    {"value": 8, "suit": "diamonds", "true_value": 8},
-                ],
-            },
         )
         self.lost_game = Game(
             profile=self.player.profile,
@@ -55,6 +41,29 @@ class AdminPlayerDashboardTests(TestCase):
             running=False,
         )
         Game.objects.bulk_create([self.won_game, self.lost_game])
+        player_deck = Deck.objects.create(
+            game=self.won_game,
+            zone=Deck.Zone.PLAYER_HAND,
+            visible=True,
+        )
+        dealer_deck = Deck.objects.create(
+            game=self.won_game,
+            zone=Deck.Zone.DEALER_HAND,
+            visible=True,
+        )
+        Card.objects.bulk_create(
+            [
+                Card(deck=player_deck, value=1, suit=Card.Suit.SPADES, position=0),
+                Card(deck=player_deck, value=10, suit=Card.Suit.HEARTS, position=1),
+                Card(deck=dealer_deck, value=10, suit=Card.Suit.CLUBS, position=0),
+                Card(
+                    deck=dealer_deck,
+                    value=8,
+                    suit=Card.Suit.DIAMONDS,
+                    position=1,
+                ),
+            ]
+        )
         MoveLog.objects.create(
             game=self.won_game,
             move=MoveLog.Move.HIT,
