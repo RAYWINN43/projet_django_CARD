@@ -1,4 +1,4 @@
-#page de gestion des mots de passe chiffre caractere spe et une lettre 
+# page de gestion des mots de passe chiffre caractere spe et une lettre
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext as _
 

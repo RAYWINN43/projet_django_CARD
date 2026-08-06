@@ -6,48 +6,48 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('game', '0001_initial'),
+        ("game", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='game',
-            name='bet_value',
+            model_name="game",
+            name="bet_value",
             field=models.IntegerField(default=0),
         ),
         migrations.AddField(
-            model_name='game',
-            name='croupier_hand',
+            model_name="game",
+            name="croupier_hand",
             field=models.JSONField(blank=True, default=list),
         ),
         migrations.AddField(
-            model_name='game',
-            name='discard_pile',
+            model_name="game",
+            name="discard_pile",
             field=models.JSONField(blank=True, default=list),
         ),
         migrations.AddField(
-            model_name='game',
-            name='draw_pile',
+            model_name="game",
+            name="draw_pile",
             field=models.JSONField(blank=True, default=list),
         ),
         migrations.AddField(
-            model_name='game',
-            name='player_bank',
+            model_name="game",
+            name="player_bank",
             field=models.IntegerField(default=100),
         ),
         migrations.AddField(
-            model_name='game',
-            name='player_hand',
+            model_name="game",
+            name="player_hand",
             field=models.JSONField(blank=True, default=list),
         ),
         migrations.AddField(
-            model_name='game',
-            name='pool',
+            model_name="game",
+            name="pool",
             field=models.IntegerField(default=0),
         ),
         migrations.AddField(
-            model_name='game',
-            name='running',
+            model_name="game",
+            name="running",
             field=models.BooleanField(default=True),
         ),
     ]
