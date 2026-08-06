@@ -5,8 +5,10 @@ if (gamePage) {
   const soundPreferenceKey = "blackjack:sound-muted";
   const ambientPositionKey = "blackjack:ambient-position";
   const dealSoundStorageKey = "blackjack:deal-sound-count";
+  const dealerTurnStorageKey = "blackjack:dealer-turn";
   const drawSoundOffset = 0;
   const drawSoundPlaybackWindow = 650;
+  const dealerTurnStepDuration = 680;
   const rankNames = {
     1: "ace",
     2: "two",
@@ -112,6 +114,22 @@ if (gamePage) {
     }
   }
 
+  function setPlayingCardFace(cardImage, card, showFace) {
+    cardImage.classList.toggle("playing-card--back", !showFace);
+    cardImage.src = showFace ? cardAssetUrl(card) : `${assetsBase}065-playing card.png`;
+    cardImage.alt = showFace
+      ? cardAccessibleName(card)
+      : "Carte du croupier face cachée";
+  }
+
+  function createPlayingCard(card, index, showFace) {
+    const cardImage = document.createElement("img");
+    cardImage.className = "playing-card";
+    cardImage.style.setProperty("--card-index", index);
+    setPlayingCardFace(cardImage, card, showFace);
+    return cardImage;
+  }
+
   function renderHand(container, payload, isDealer) {
     if (!container || !payload || !Array.isArray(payload.cards)) {
       return;
@@ -120,15 +138,62 @@ if (gamePage) {
     container.replaceChildren();
 
     payload.cards.forEach((card, index) => {
-      const cardImage = document.createElement("img");
       const showFace = !isDealer || payload.visible === true || index === 0;
-
-      cardImage.className = `playing-card${showFace ? "" : " playing-card--back"}`;
-      cardImage.style.setProperty("--card-index", index);
-      cardImage.src = showFace ? cardAssetUrl(card) : `${assetsBase}065-playing card.png`;
-      cardImage.alt = showFace ? cardAccessibleName(card) : "Carte du croupier face cachée";
-      container.append(cardImage);
+      container.append(createPlayingCard(card, index, showFace));
     });
+  }
+
+  function rememberDealerTurnStart(actionType, payload) {
+    if (!gamePage.dataset.gameId || !payload || !Array.isArray(payload.cards)) {
+      return;
+    }
+
+    try {
+      window.sessionStorage.setItem(
+        dealerTurnStorageKey,
+        JSON.stringify({
+          gameId: gamePage.dataset.gameId,
+          actionType,
+          dealerHand: payload,
+          savedAt: Date.now(),
+        }),
+      );
+    } catch {
+      // La partie reste jouable si le stockage de session est indisponible.
+    }
+  }
+
+  function readDealerTurnTransition() {
+    let transition = null;
+
+    try {
+      transition = JSON.parse(
+        window.sessionStorage.getItem(dealerTurnStorageKey) || "null",
+      );
+    } catch {
+      transition = null;
+    }
+
+    const isCurrentGame =
+      transition && String(transition.gameId) === String(gamePage.dataset.gameId);
+    const isRecent =
+      isCurrentGame && Date.now() - Number(transition.savedAt || 0) < 120000;
+    const hasInitialHand =
+      isRecent &&
+      transition.dealerHand &&
+      Array.isArray(transition.dealerHand.cards);
+    const gameHasEnded = gamePage.dataset.gameRunning === "false";
+
+    if (!gameHasEnded || !hasInitialHand) {
+      window.sessionStorage.removeItem(dealerTurnStorageKey);
+      return null;
+    }
+
+    return transition;
+  }
+
+  function clearDealerTurnTransition() {
+    window.sessionStorage.removeItem(dealerTurnStorageKey);
   }
 
   function handValue(payload) {
@@ -331,7 +396,15 @@ if (gamePage) {
 
   const dealerHand = readHand("dealer-hand-data");
   const playerHand = readHand("player-hand-data");
-  renderHand(gamePage.querySelector("[data-dealer-hand]"), dealerHand, true);
+  const dealerHandContainer = gamePage.querySelector("[data-dealer-hand]");
+  const dealerTurnIndicator = gamePage.querySelector("[data-dealer-turn-indicator]");
+  const dealerTurnMessage = gamePage.querySelector("[data-dealer-turn-message]");
+  const dealerTurnTransition = readDealerTurnTransition();
+  renderHand(
+    dealerHandContainer,
+    dealerTurnTransition ? dealerTurnTransition.dealerHand : dealerHand,
+    true,
+  );
   renderHand(gamePage.querySelector("[data-player-hand]"), playerHand, false);
 
   function renderEndCards(container, payload) {
@@ -352,6 +425,13 @@ if (gamePage) {
 
   const endScreen = gamePage.querySelector("[data-game-end-screen]");
   let currentResult = null;
+
+  if (endScreen && dealerTurnTransition) {
+    endScreen.classList.add("is-waiting-for-dealer");
+    endScreen.inert = true;
+    endScreen.setAttribute("aria-hidden", "true");
+    gamePage.dataset.dealerTurnState = "playing";
+  }
 
   if (endScreen && dealerHand && playerHand) {
     currentResult = gameResult(playerHand, dealerHand);
@@ -572,6 +652,64 @@ if (gamePage) {
     }
   }
 
+  function dealerTurnDelay(duration = dealerTurnStepDuration) {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    return new Promise((resolve) =>
+      window.setTimeout(resolve, reducedMotion ? 80 : duration),
+    );
+  }
+
+  async function playDealerTurnTransition() {
+    if (
+      !dealerTurnTransition ||
+      !dealerHand ||
+      !dealerHandContainer ||
+      !endScreen
+    ) {
+      return false;
+    }
+
+    const initialCards = dealerTurnTransition.dealerHand.cards;
+    const finalCards = dealerHand.cards;
+    const initialCardCount = Math.min(initialCards.length, finalCards.length);
+
+    dealerTurnIndicator.hidden = false;
+    dealerTurnMessage.textContent = "Le croupier révèle sa main…";
+    gameStatus.textContent = "Tour du croupier. Bernard Tapis révèle sa main.";
+    await dealerTurnDelay(460);
+
+    [...dealerHandContainer.children].forEach((cardImage, index) => {
+      if (index >= initialCardCount) {
+        return;
+      }
+      setPlayingCardFace(cardImage, finalCards[index], true);
+      cardImage.classList.add("playing-card--revealed");
+    });
+    await dealerTurnDelay();
+
+    for (let index = initialCardCount; index < finalCards.length; index += 1) {
+      dealerTurnMessage.textContent = `Bernard Tapis pioche sa carte ${index + 1}…`;
+      gameStatus.textContent = `Le croupier pioche une carte. Il possède maintenant ${index + 1} cartes.`;
+      dealerHandContainer.append(createPlayingCard(finalCards[index], index, true));
+      playDrawEffect();
+      await dealerTurnDelay();
+    }
+
+    const dealerScore = handValue(dealerHand);
+    dealerTurnMessage.textContent = `Bernard Tapis termine avec ${dealerScore} points`;
+    gameStatus.textContent = `Le croupier termine son tour avec ${dealerScore} points.`;
+    await dealerTurnDelay(560);
+
+    dealerTurnIndicator.hidden = true;
+    endScreen.classList.remove("is-waiting-for-dealer");
+    endScreen.inert = false;
+    endScreen.removeAttribute("aria-hidden");
+    gamePage.dataset.dealerTurnState = "complete";
+    clearDealerTurnTransition();
+    await playEndSoundOnce();
+    return true;
+  }
+
   function stopAllAudio() {
     ambientAudio.pause();
     drawAudio.pause();
@@ -586,7 +724,12 @@ if (gamePage) {
   }
 
   async function playEndSoundOnce() {
-    if (!currentResult || currentResult.result === "draw" || endSoundPending) {
+    if (
+      !currentResult ||
+      currentResult.result === "draw" ||
+      endSoundPending ||
+      gamePage.dataset.dealerTurnState === "playing"
+    ) {
       return;
     }
 
@@ -623,7 +766,11 @@ if (gamePage) {
   restoreAmbientPosition();
   startAmbientAudio();
   scheduleInitialDealSounds();
-  playEndSoundOnce();
+  if (dealerTurnTransition) {
+    playDealerTurnTransition();
+  } else {
+    playEndSoundOnce();
+  }
 
   const unlockAudio = () => {
     startAmbientAudio();
@@ -704,6 +851,7 @@ if (gamePage) {
       }
 
       actionPending = true;
+      rememberDealerTurnStart(actionControl.dataset.gameActionType, dealerHand);
       gameActionControls.forEach((control) => {
         control.classList.add("is-loading");
         control.disabled = true;

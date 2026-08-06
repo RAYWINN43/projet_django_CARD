@@ -119,3 +119,4 @@ class GameAudioTemplateTests(TestCase):
 
         self.assertContains(response, "assets/bubble.m4a")
         self.assertNotContains(response, "BUBBLE POP SOUND EFFECT - FREE.mp3")
+        self.assertContains(response, "data-dealer-turn-indicator")
