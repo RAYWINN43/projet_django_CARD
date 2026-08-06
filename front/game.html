@@ -21,7 +21,7 @@
     <script src="{% static 'game.js' %}" defer></script>
   </head>
 
-  <body class="game-page">
+  <body class="game-page{% if game and not game.running %} game-page--ended{% endif %}">
     <main
       class="game-shell"
       data-game-page
@@ -33,6 +33,7 @@
       data-game-pool="{{ game.pool|default:0 }}"
       data-player-bank="{{ game.player_bank|default:0 }}"
       data-game-running="{% if game and game.running %}true{% else %}false{% endif %}"
+      data-game-result="{{ game.result|default:'' }}"
     >
       <div class="game-brand" aria-label="BlackJack">
         <img src="{% static 'assets/blackjack.png' %}" alt="" />
@@ -45,7 +46,16 @@
           src="{% static 'assets/utilisateur.png' %}"
           alt="Avatar du profil"
         />
-        <p class="game-player-summary__name">{{ user.username|default:"Snowlly" }}</p>
+        <p class="game-player-summary__name sr-only">{{ user.username|default:"Snowlly" }}</p>
+        <div class="game-player-balance" aria-label="Solde actuel du joueur">
+          <span class="game-player-balance__label">Solde</span>
+          <strong class="game-player-balance__value">
+            <output data-player-balance>
+              {% if game %}{{ game.player_bank }}{% elif user.is_authenticated %}{{ user.profile.jetons }}{% else %}100{% endif %}
+            </output>
+            <span class="game-player-balance__coin" aria-hidden="true">$</span>
+          </strong>
+        </div>
       </aside>
 
       <div class="game-avatar-sources" hidden>
@@ -92,7 +102,7 @@
         </figure>
       </section>
 
-      {% if game and game.running %}
+      {% if game %}
         <aside
           class="game-phone"
           aria-labelledby="game-phone-title"
@@ -118,30 +128,30 @@
           </div>
 
           <nav class="game-actions" aria-label="Actions de la partie">
-            <a
-              class="game-action game-action--continue"
-              data-game-action
-              data-game-action-type="hit"
-              href="{% url 'play_turn' game.id 'hit' %}"
-            >
-              Continuer
-            </a>
-            <a
-              class="game-action game-action--double"
-              data-game-action
-              data-game-action-type="double"
-              href="{% url 'play_turn' game.id 'double' %}"
-            >
-              DOUBLER
-            </a>
-            <a
-              class="game-action game-action--stop"
-              data-game-action
-              data-game-action-type="stop"
-              href="{% url 'play_turn' game.id 'stop' %}"
-            >
-              STOP
-            </a>
+            {% if game.running %}
+              <form class="game-action-form" method="post" action="{% url 'play_turn' game.id 'hit' %}" data-game-action-form>
+                {% csrf_token %}
+                <button class="game-action game-action--continue" type="submit" data-game-action data-game-action-type="hit">
+                  Continuer
+                </button>
+              </form>
+              <form class="game-action-form" method="post" action="{% url 'play_turn' game.id 'double' %}" data-game-action-form>
+                {% csrf_token %}
+                <button class="game-action game-action--double" type="submit" data-game-action data-game-action-type="double">
+                  DOUBLER
+                </button>
+              </form>
+              <form class="game-action-form" method="post" action="{% url 'play_turn' game.id 'stop' %}" data-game-action-form>
+                {% csrf_token %}
+                <button class="game-action game-action--stop" type="submit" data-game-action data-game-action-type="stop">
+                  STOP
+                </button>
+              </form>
+            {% else %}
+              <span class="game-action game-action--continue" aria-disabled="true">Continuer</span>
+              <span class="game-action game-action--double" aria-disabled="true">DOUBLER</span>
+              <span class="game-action game-action--stop" aria-disabled="true">STOP</span>
+            {% endif %}
           </nav>
         </aside>
       {% endif %}
@@ -162,21 +172,26 @@
           {{ game.player_hand|json_script:"player-hand-data" }}
         {% endif %}
 
-        {% if not game or not game.running %}
-          <form class="bet-bar" method="get" action="{% url 'launch_game' %}" data-bet-form>
+        {% if not game %}
+          <form class="bet-bar" method="post" action="{% url 'launch_game' %}" data-bet-form>
+            {% csrf_token %}
             <label class="bet-bar__label" for="bet-value">Choix de la mise</label>
             <input
               class="bet-bar__input"
               id="bet-value"
               name="bet"
               type="number"
-              value="0"
+              value="{{ bet_form.bet.value|default:1 }}"
               min="1"
+              max="{{ user.profile.jetons }}"
               step="1"
               inputmode="numeric"
               aria-describedby="bet-help"
             />
             <span class="sr-only" id="bet-help">Saisissez une mise entière supérieure à zéro.</span>
+            {% if bet_form.bet.errors %}
+              <span class="bet-bar__error" role="alert">{{ bet_form.bet.errors|join:" " }}</span>
+            {% endif %}
             <button class="bet-bar__submit" type="submit" aria-label="Valider la mise et distribuer les cartes">
               <svg viewBox="0 0 64 64" aria-hidden="true">
                 <path d="M9 32h43M35 14l18 18-18 18" />
@@ -186,6 +201,7 @@
         {% endif %}
 
         <p class="sr-only" data-game-status aria-live="polite">
+          {% for message in messages %}{{ message }} {% endfor %}
           {% if game and game.running %}
             Partie en cours. Mise : {{ game.bet_value }}. Banque : {{ game.player_bank }}.
           {% elif game %}
@@ -195,6 +211,49 @@
           {% endif %}
         </p>
       </section>
+
+      {% if game and not game.running %}
+        <section
+          class="game-end-screen"
+          data-game-end-screen
+          aria-labelledby="game-end-title"
+          aria-modal="true"
+          role="dialog"
+        >
+          <div class="game-end-panel">
+            <h1 class="game-end-title" id="game-end-title" data-game-end-title>GAGNÉ</h1>
+
+            <div class="game-end-hands">
+              <article class="game-end-hand" data-game-end-player-row>
+                <div class="game-end-identity">
+                  <img
+                    data-game-end-player-avatar
+                    src="{% static 'assets/homme (2).png' %}"
+                    alt="Avatar de {{ user.username|default:'Snowlly' }}"
+                  />
+                  <span>{{ user.username|default:"Snowlly" }}</span>
+                </div>
+                <div class="game-end-cards" data-game-end-player-cards aria-label="Cartes du joueur"></div>
+                <strong class="game-end-gain" data-game-end-player-gain hidden></strong>
+              </article>
+
+              <article class="game-end-hand" data-game-end-dealer-row>
+                <div class="game-end-identity">
+                  <img src="{% static 'assets/croupier.png' %}" alt="Bernard Tapis" />
+                  <span>Bernard Tapis</span>
+                </div>
+                <div class="game-end-cards" data-game-end-dealer-cards aria-label="Cartes du croupier"></div>
+                <strong class="game-end-gain" data-game-end-dealer-gain hidden></strong>
+              </article>
+            </div>
+
+            <nav class="game-end-actions" aria-label="Fin de la partie">
+              <a class="game-end-action game-end-action--replay" href="{% url 'game_page' %}">Rejouer</a>
+              <a class="game-end-action game-end-action--leave" href="{% url 'avatar' %}">Quitter la table</a>
+            </nav>
+          </div>
+        </section>
+      {% endif %}
 
       <div class="game-settings-menu" data-game-settings-menu>
         <div
@@ -287,5 +346,29 @@
         </div>
       </div>
     </dialog>
+
+    <div class="game-audio" aria-hidden="true">
+      <audio
+        data-game-audio-ambient
+        src="{% static 'assets/Musique dAmbiance Chill Relax 🥃🎵 Lounge Bar   Musique Libre de Droit.mp3' %}"
+        preload="auto"
+        loop
+      ></audio>
+      <audio
+        data-game-audio-draw
+        src="{% static 'assets/bubble.m4a' %}"
+        preload="auto"
+      ></audio>
+      <audio
+        data-game-audio-win
+        src="{% static 'assets/Apple pay sucesssound track.mp3' %}"
+        preload="auto"
+      ></audio>
+      <audio
+        data-game-audio-loss
+        src="{% static 'assets/Disappointed - Sound Effect (HD).mp3' %}"
+        preload="auto"
+      ></audio>
+    </div>
   </body>
 </html>

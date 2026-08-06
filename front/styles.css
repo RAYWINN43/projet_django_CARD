@@ -4,7 +4,47 @@
   --color-button-shadow: #409c30;
   --color-action: #313131;
   --color-white: #ffffff;
+  --color-ink: #272727;
+  --color-ink-soft: #242424;
+  --color-ink-muted: #555555;
+  --color-black: #050505;
+  --color-error: #ff2f3d;
+  --color-suit-heart: #ff474b;
+  --color-suit-diamond: #ff474b;
+  --color-suit-spade: #313131;
+  --color-suit-club: #313131;
+  --color-coin-border: #d99b18;
+  --color-coin-text: #9d6810;
+  --color-coin: #ffc64c;
+  --color-watermark: rgba(190, 180, 88, 0.64);
+  --color-panel-soft: #dce4da;
+  --color-bet-highlight: #ffe5ab;
+  --color-stop: #f47d94;
+  --color-stop-shadow: #ffc1cc;
+  --color-double: #ffbc35;
+  --color-double-shadow: #ffd475;
+  --color-win: #8ee489;
+  --color-loss: #ff91a6;
+  --color-draw: #ffd275;
+  --color-history-card: #31502b;
+  --overlay-soft: rgba(190, 207, 187, 0.48);
+  --overlay-dark: rgba(49, 49, 49, 0.38);
+  --overlay-dark-strong: rgba(49, 49, 49, 0.42);
+  --shadow-focus: rgba(49, 49, 49, 0.34);
+  --shadow-panel: rgba(49, 49, 49, 0.28);
+  --shadow-dialog: rgba(49, 49, 49, 0.3);
+  --shadow-card: rgba(49, 49, 49, 0.13);
+  --white-38: rgba(255, 255, 255, 0.38);
+  --white-80: rgba(255, 255, 255, 0.8);
+  --white-82: rgba(255, 255, 255, 0.82);
   --font-display: "Coiny", "Cooper Black", "Arial Rounded MT Bold", sans-serif;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --radius-sm: 10px;
+  --radius-panel: 48px;
   --card-width: 510px;
   --card-height: 718px;
   --control-height: 72px;
@@ -220,7 +260,7 @@ button {
   left: 40px;
   width: calc(100% - 80px);
   margin: 0;
-  color: #ff2f3d;
+  color: var(--color-error);
   font-family: Arial, sans-serif;
   font-size: 15px;
   font-weight: 700;
@@ -283,7 +323,7 @@ button {
 }
 
 .auth-input:focus-visible {
-  box-shadow: 0 0 0 5px rgba(49, 49, 49, 0.34);
+  box-shadow: 0 0 0 5px var(--shadow-focus);
 }
 
 .auth-submit {
@@ -307,7 +347,7 @@ button {
 }
 
 .auth-submit:hover {
-  background: #272727;
+  background: var(--color-ink);
 }
 
 .auth-submit:active {
@@ -396,7 +436,7 @@ button {
 }
 
 .welcome-logout:hover {
-  background: #272727;
+  background: var(--color-ink);
 }
 
 .welcome-logout:active {

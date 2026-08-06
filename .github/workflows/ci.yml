@@ -38,7 +38,11 @@ jobs:
 
     env:
       DJANGO_SECRET_KEY: ci-secret-key
-      DJANGO_DEBUG: "1"
+      DJANGO_DEBUG: "0"
+      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,testserver"
+      DJANGO_SECURE_SSL_REDIRECT: "0"
+      DJANGO_SESSION_COOKIE_SECURE: "0"
+      DJANGO_CSRF_COOKIE_SECURE: "0"
       POSTGRES_DB: blackjack
       POSTGRES_USER: blackjack
       POSTGRES_PASSWORD: blackjack
@@ -70,6 +74,9 @@ jobs:
 
       - name: Run migrations
         run: uv run python manage.py migrate --noinput
+
+      - name: Run Django tests
+        run: uv run python manage.py test
 
       - name: Run Django system check
         run: uv run python manage.py check

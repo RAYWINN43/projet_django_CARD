@@ -162,7 +162,7 @@
 }
 
 .carousel-avatar--active.is-selected {
-  filter: drop-shadow(0 0 0.6px var(--color-white)) drop-shadow(0 0 7px rgba(255, 255, 255, 0.82));
+  filter: drop-shadow(0 0 0.6px var(--color-white)) drop-shadow(0 0 7px var(--white-82));
 }
 
 .carousel-arrow {
@@ -196,7 +196,7 @@
 }
 
 .carousel-arrow:hover {
-  color: #242424;
+  color: var(--color-ink-soft);
 }
 
 .carousel-arrow:active svg {
@@ -234,7 +234,7 @@
 }
 
 .select-avatar-button:hover {
-  background: #272727;
+  background: var(--color-ink);
 }
 
 .select-avatar-button:active {
@@ -242,7 +242,7 @@
 }
 
 .select-avatar-button[aria-pressed="true"] {
-  box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.8);
+  box-shadow: inset 0 0 0 4px var(--white-80);
 }
 
 .launch-game-button {
@@ -292,7 +292,7 @@
   border: 5px solid var(--color-action);
   border-radius: 50%;
   opacity: 0;
-  background: #dce4da;
+  background: var(--color-panel-soft);
   pointer-events: none;
   transition:
     transform 460ms cubic-bezier(0.65, 0, 0.35, 1),
@@ -421,11 +421,11 @@ form.settings-action {
   border-radius: 38px;
   color: var(--color-white);
   background: var(--color-surface);
-  box-shadow: 0 24px 70px rgba(49, 49, 49, 0.28);
+  box-shadow: 0 24px 70px var(--shadow-panel);
 }
 
 .rules-dialog::backdrop {
-  background: rgba(49, 49, 49, 0.38);
+  background: var(--overlay-dark);
   backdrop-filter: blur(3px);
 }
 

@@ -1,54 +1,86 @@
-from django.shortcuts import redirect, render
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
-from .models import Game
+from accounts.models import Profile
+
+from .forms import BetForm
+from .models import Game, GameRuleError
 
 
+def game_context(game=None, bet_form=None):
+    return {"game": game, "bet_form": bet_form}
+
+
+@login_required
 def game_page(request, game_id=None):
-    game = Game.objects.filter(id=game_id).first() if game_id else None
-    return render(request, "game.html", {"game": game})
+    if game_id is not None:
+        game = get_object_or_404(Game, id=game_id, profile=request.user.profile)
+        return render(request, "game.html", game_context(game=game))
+
+    bet_form = BetForm(bank=request.user.profile.jetons, initial={"bet": 1})
+    return render(request, "game.html", game_context(bet_form=bet_form))
 
 
+@login_required
+@require_POST
 def launch_game(request):
-    bet_value_raw = request.GET.get("bet")
+    with transaction.atomic():
+        profile = Profile.objects.select_for_update().get(user=request.user)
+        bet_form = BetForm(request.POST, bank=profile.jetons)
+        if not bet_form.is_valid():
+            return render(
+                request,
+                "game.html",
+                game_context(bet_form=bet_form),
+                status=400,
+            )
 
-    try:
-        bet_value = int(bet_value_raw)
-    except (TypeError, ValueError):
-        bet_value = 30
+        game = Game.objects.create(profile=profile, player_bank=profile.jetons)
+        game.new_game(bet=bet_form.cleaned_data["bet"])
 
-    profile = request.user.profile if request.user.is_authenticated else None
-    game = Game.objects.create()
-    game.new_game(bet=bet_value, profile=profile)
     return redirect("launch_game_id", game_id=game.id)
 
 
+@login_required
 def play_game(request, game_id):
-    game = Game.objects.get(id=game_id)
-    return render(request, "game.html", {"game": game})
+    game = get_object_or_404(Game, id=game_id, profile=request.user.profile)
+    return render(request, "game.html", game_context(game=game))
 
 
+@login_required
+@require_POST
 def play_turn(request, game_id, move):
-    game = Game.objects.get(id=game_id)
-    if request.user.is_authenticated:
-        game.profile = request.user.profile
-    match move:
-        case "hit":
-            done = game.hit()
-        case "double":
-            done = game.double()
-        case "stop":
-            done = game.stop()
-        case _:
-            done = False
+    with transaction.atomic():
+        game = get_object_or_404(
+            Game.objects.select_for_update().select_related("profile"),
+            id=game_id,
+            profile=request.user.profile,
+        )
 
-    if done:
-        log = game.check_results()
-        print(log)
-        return redirect("end_game", game_id=game.id)
+        try:
+            if move == "hit":
+                done = game.hit()
+            elif move == "double":
+                done = game.double()
+            elif move == "stop":
+                done = game.stop()
+            else:
+                messages.error(request, "Ce coup n'existe pas.")
+                return redirect("launch_game_id", game_id=game.id)
 
-    return render(request, "game.html", {"game": game})
+            if done:
+                game.check_results()
+                return redirect("end_game", game_id=game.id)
+        except GameRuleError as error:
+            messages.error(request, str(error))
+
+    return redirect("launch_game_id", game_id=game.id)
 
 
+@login_required
 def end_game(request, game_id):
-    game = Game.objects.get(id=game_id)
-    return render(request, "game.html", {"game": game})
+    game = get_object_or_404(Game, id=game_id, profile=request.user.profile)
+    return render(request, "game.html", game_context(game=game))

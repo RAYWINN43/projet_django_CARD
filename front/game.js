@@ -2,6 +2,11 @@ const gamePage = document.querySelector("[data-game-page]");
 
 if (gamePage) {
   const historyStorageKey = "blackjack:game-history";
+  const soundPreferenceKey = "blackjack:sound-muted";
+  const ambientPositionKey = "blackjack:ambient-position";
+  const dealSoundStorageKey = "blackjack:deal-sound-count";
+  const drawSoundOffset = 0;
+  const drawSoundPlaybackWindow = 650;
   const rankNames = {
     1: "ace",
     2: "two",
@@ -43,6 +48,7 @@ if (gamePage) {
 
   const assetsBase = gamePage.dataset.assetsBase;
   const playerAvatar = gamePage.querySelector("[data-game-player-avatar]");
+  const endPlayerAvatar = gamePage.querySelector("[data-game-end-player-avatar]");
   const avatarSources = new Map(
     [...gamePage.querySelectorAll("[data-game-avatar-id]")].map((source) => [
       source.dataset.gameAvatarId,
@@ -51,7 +57,12 @@ if (gamePage) {
   );
 
   const selectedAvatarId = window.sessionStorage.getItem("blackjack:selected-avatar") || "homme-manteau";
-  playerAvatar.src = avatarSources.get(selectedAvatarId) || avatarSources.get("homme-manteau");
+  const selectedAvatarSrc = avatarSources.get(selectedAvatarId) || avatarSources.get("homme-manteau");
+  playerAvatar.src = selectedAvatarSrc;
+
+  if (endPlayerAvatar) {
+    endPlayerAvatar.src = selectedAvatarSrc;
+  }
 
   function cardAssetNumber(value, suit) {
     switch (suit) {
@@ -144,6 +155,20 @@ if (gamePage) {
     return value;
   }
 
+  function gameResult(playerPayload, dealerPayload) {
+    const playerScore = handValue(playerPayload);
+    const dealerScore = handValue(dealerPayload);
+    let result = "draw";
+
+    if ((playerScore < dealerScore && dealerScore <= 21) || playerScore > 21) {
+      result = "loss";
+    } else if (playerScore > dealerScore || dealerScore > 21) {
+      result = "win";
+    }
+
+    return { result, playerScore, dealerScore };
+  }
+
   function readHistory() {
     try {
       const history = JSON.parse(window.localStorage.getItem(historyStorageKey) || "[]");
@@ -182,15 +207,7 @@ if (gamePage) {
       return null;
     }
 
-    const playerScore = handValue(sourcePlayerHand);
-    const dealerScore = handValue(sourceDealerHand);
-    let result = "draw";
-
-    if ((playerScore < dealerScore && dealerScore <= 21) || playerScore > 21) {
-      result = "loss";
-    } else if (playerScore > dealerScore || dealerScore > 21) {
-      result = "win";
-    }
+    const { result, playerScore, dealerScore } = gameResult(sourcePlayerHand, sourceDealerHand);
 
     const pool = Number(sourcePage.dataset.gamePool) || 0;
 
@@ -317,6 +334,55 @@ if (gamePage) {
   renderHand(gamePage.querySelector("[data-dealer-hand]"), dealerHand, true);
   renderHand(gamePage.querySelector("[data-player-hand]"), playerHand, false);
 
+  function renderEndCards(container, payload) {
+    if (!container || !payload || !Array.isArray(payload.cards)) {
+      return;
+    }
+
+    container.replaceChildren();
+
+    payload.cards.forEach((card) => {
+      const cardImage = document.createElement("img");
+      cardImage.className = "game-end-card";
+      cardImage.src = cardAssetUrl(card);
+      cardImage.alt = cardAccessibleName(card);
+      container.append(cardImage);
+    });
+  }
+
+  const endScreen = gamePage.querySelector("[data-game-end-screen]");
+  let currentResult = null;
+
+  if (endScreen && dealerHand && playerHand) {
+    currentResult = gameResult(playerHand, dealerHand);
+    const backendResult = {
+      player: "win",
+      dealer: "loss",
+      draw: "draw",
+    }[gamePage.dataset.gameResult];
+    if (backendResult) {
+      currentResult.result = backendResult;
+    }
+    const endTitle = endScreen.querySelector("[data-game-end-title]");
+    const playerGain = endScreen.querySelector("[data-game-end-player-gain]");
+    const dealerGain = endScreen.querySelector("[data-game-end-dealer-gain]");
+    const pool = Number(gamePage.dataset.gamePool) || 0;
+
+    endScreen.dataset.result = currentResult.result;
+    endTitle.textContent = currentResult.result === "win" ? "GAGNÉ" : currentResult.result === "loss" ? "PERDU" : "ÉGALITÉ";
+
+    renderEndCards(endScreen.querySelector("[data-game-end-player-cards]"), playerHand);
+    renderEndCards(endScreen.querySelector("[data-game-end-dealer-cards]"), dealerHand);
+
+    if (currentResult.result === "win") {
+      playerGain.textContent = String(pool * 2);
+      playerGain.hidden = false;
+    } else if (currentResult.result === "loss") {
+      dealerGain.textContent = String(pool);
+      dealerGain.hidden = false;
+    }
+  }
+
   const gameStatus = gamePage.querySelector("[data-game-status]");
   if (dealerHand && playerHand) {
     gameStatus.textContent = `Main du joueur : ${handValue(playerHand)} points. Le croupier possède ${dealerHand.cards.length} cartes.`;
@@ -332,14 +398,19 @@ if (gamePage) {
 
     betForm.addEventListener("submit", (event) => {
       const betValue = Number(betInput.value);
-      const isValidBet = Number.isInteger(betValue) && betValue > 0;
+      const maxBet = Number(betInput.max);
+      const isValidBet =
+        Number.isInteger(betValue) && betValue > 0 && (!maxBet || betValue <= maxBet);
 
       betInput.setAttribute("aria-invalid", String(!isValidBet));
 
       if (!isValidBet) {
         event.preventDefault();
         betInput.focus();
+        return;
       }
+
+      window.sessionStorage.setItem(dealSoundStorageKey, "4");
     });
 
     betInput.addEventListener("input", () => betInput.removeAttribute("aria-invalid"));
@@ -358,10 +429,210 @@ if (gamePage) {
   const closeHistoryButton = historyDialog.querySelector("[data-game-close-history]");
   const historyList = historyDialog.querySelector("[data-game-history-list]");
   const historyEmpty = historyDialog.querySelector("[data-game-history-empty]");
+  const ambientAudio = document.querySelector("[data-game-audio-ambient]");
+  const drawAudio = document.querySelector("[data-game-audio-draw]");
+  const winAudio = document.querySelector("[data-game-audio-win]");
+  const lossAudio = document.querySelector("[data-game-audio-loss]");
+  const activeEffects = new Set();
   let settingsOpen = false;
-  let soundMuted = true;
+  let soundMuted = window.localStorage.getItem(soundPreferenceKey) === "true";
+  let endSoundPending = false;
+  let ambientPositionRestored = false;
+
+  ambientAudio.volume = 0.12;
+  drawAudio.volume = 0.78;
+  winAudio.volume = 0.82;
+  lossAudio.volume = 0.72;
+
+  function saveAmbientPosition() {
+    if (!ambientAudio || !Number.isFinite(ambientAudio.currentTime)) {
+      return;
+    }
+
+    window.sessionStorage.setItem(
+      ambientPositionKey,
+      JSON.stringify({ time: ambientAudio.currentTime, savedAt: Date.now() }),
+    );
+  }
+
+  function restoreAmbientPosition() {
+    if (ambientPositionRestored || !ambientAudio) {
+      return;
+    }
+
+    const storedPosition = window.sessionStorage.getItem(ambientPositionKey);
+    if (!storedPosition) {
+      ambientPositionRestored = true;
+      return;
+    }
+
+    const applyStoredPosition = () => {
+      try {
+        const { time, savedAt } = JSON.parse(storedPosition);
+        const elapsed = Number.isFinite(savedAt) ? Math.max(0, (Date.now() - savedAt) / 1000) : 0;
+        const nextPosition = Number(time) + elapsed;
+
+        if (Number.isFinite(nextPosition) && Number.isFinite(ambientAudio.duration)) {
+          ambientAudio.currentTime = nextPosition % ambientAudio.duration;
+        }
+      } catch {
+        window.sessionStorage.removeItem(ambientPositionKey);
+      }
+
+      ambientPositionRestored = true;
+    };
+
+    if (ambientAudio.readyState >= 1) {
+      applyStoredPosition();
+    } else {
+      ambientAudio.addEventListener("loadedmetadata", applyStoredPosition, { once: true });
+    }
+  }
+
+  async function startAmbientAudio() {
+    if (soundMuted || !ambientAudio.paused) {
+      return true;
+    }
+
+    try {
+      await ambientAudio.play();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async function playEffect(source, startAt = 0) {
+    if (soundMuted || !source) {
+      return false;
+    }
+
+    const effect = source.cloneNode();
+    effect.volume = source.volume;
+    activeEffects.add(effect);
+    effect.addEventListener("ended", () => activeEffects.delete(effect), { once: true });
+
+    const seekToEffect = () => {
+      if (startAt > 0 && Number.isFinite(effect.duration)) {
+        effect.currentTime = Math.min(startAt, Math.max(0, effect.duration - 0.08));
+      }
+    };
+
+    if (effect.readyState >= 1) {
+      seekToEffect();
+    } else {
+      effect.addEventListener("loadedmetadata", seekToEffect, { once: true });
+      effect.load();
+    }
+
+    try {
+      // L'appel à play() doit rester synchrone avec le clic utilisateur.
+      // Attendre loadedmetadata auparavant faisait perdre l'autorisation audio
+      // dans certains navigateurs.
+      await effect.play();
+      if (source === drawAudio) {
+        gamePage.dataset.drawSoundState = "playing";
+      }
+      return true;
+    } catch {
+      if (source === drawAudio) {
+        gamePage.dataset.drawSoundState = "blocked";
+      }
+      activeEffects.delete(effect);
+      return false;
+    }
+  }
+
+  async function playDrawEffect() {
+    if (soundMuted || !drawAudio) {
+      return false;
+    }
+
+    try {
+      drawAudio.pause();
+
+      if (drawAudio.readyState < 1) {
+        await new Promise((resolve, reject) => {
+          drawAudio.addEventListener("loadedmetadata", resolve, { once: true });
+          drawAudio.addEventListener("error", reject, { once: true });
+          drawAudio.load();
+        });
+      }
+
+      drawAudio.currentTime = Math.min(
+        drawSoundOffset,
+        Math.max(0, drawAudio.duration - 0.08),
+      );
+      await drawAudio.play();
+      gamePage.dataset.drawSoundState = "playing";
+      return true;
+    } catch {
+      gamePage.dataset.drawSoundState = "blocked";
+      return false;
+    }
+  }
+
+  function stopAllAudio() {
+    ambientAudio.pause();
+    drawAudio.pause();
+    activeEffects.forEach((effect) => effect.pause());
+    activeEffects.clear();
+  }
+
+  function updateSoundControl() {
+    soundIcon.src = soundMuted ? soundToggle.dataset.mutedSrc : soundToggle.dataset.soundSrc;
+    soundToggle.setAttribute("aria-pressed", String(soundMuted));
+    soundToggle.setAttribute("aria-label", soundMuted ? "Activer le son" : "Couper le son");
+  }
+
+  async function playEndSoundOnce() {
+    if (!currentResult || currentResult.result === "draw" || endSoundPending) {
+      return;
+    }
+
+    const endSoundKey = `blackjack:end-sound:${gamePage.dataset.gameId}`;
+    if (window.sessionStorage.getItem(endSoundKey) === "played") {
+      return;
+    }
+
+    endSoundPending = true;
+    const played = await playEffect(currentResult.result === "win" ? winAudio : lossAudio);
+    endSoundPending = false;
+
+    if (played) {
+      window.sessionStorage.setItem(endSoundKey, "played");
+      endScreen.dataset.endSound = currentResult.result;
+    }
+  }
+
+  function scheduleInitialDealSounds() {
+    const dealSoundCount = Number(window.sessionStorage.getItem(dealSoundStorageKey)) || 0;
+    window.sessionStorage.removeItem(dealSoundStorageKey);
+
+    if (dealSoundCount <= 0 || soundMuted) {
+      return;
+    }
+
+    for (let index = 0; index < dealSoundCount; index += 1) {
+      window.setTimeout(() => playEffect(drawAudio, drawSoundOffset), index * 180);
+    }
+  }
 
   settingsPanel.inert = true;
+  updateSoundControl();
+  restoreAmbientPosition();
+  startAmbientAudio();
+  scheduleInitialDealSounds();
+  playEndSoundOnce();
+
+  const unlockAudio = () => {
+    startAmbientAudio();
+    playEndSoundOnce();
+  };
+
+  document.addEventListener("pointerdown", unlockAudio, { once: true, capture: true });
+  document.addEventListener("keydown", unlockAudio, { once: true, capture: true });
+  window.addEventListener("pagehide", saveAmbientPosition);
 
   function setSettingsOpen(open) {
     settingsOpen = open;
@@ -376,9 +647,15 @@ if (gamePage) {
 
   soundToggle.addEventListener("click", () => {
     soundMuted = !soundMuted;
-    soundIcon.src = soundMuted ? soundToggle.dataset.mutedSrc : soundToggle.dataset.soundSrc;
-    soundToggle.setAttribute("aria-pressed", String(soundMuted));
-    soundToggle.setAttribute("aria-label", soundMuted ? "Activer le son" : "Couper le son");
+    window.localStorage.setItem(soundPreferenceKey, String(soundMuted));
+    updateSoundControl();
+
+    if (soundMuted) {
+      stopAllAudio();
+    } else {
+      startAmbientAudio();
+      playEndSoundOnce();
+    }
   });
 
   openRulesButton.addEventListener("click", () => {
@@ -408,23 +685,42 @@ if (gamePage) {
     }
   });
 
-  const gameActionLinks = [...gamePage.querySelectorAll("[data-game-action]")];
+  const gameActionControls = [...gamePage.querySelectorAll("[data-game-action]")];
   const gameRecap = gamePage.querySelector("[data-game-recap]");
   const currentBetOutput = gamePage.querySelector("[data-game-current-bet]");
   let actionPending = false;
 
-  gameActionLinks.forEach((actionLink) => {
-    actionLink.addEventListener("click", async (event) => {
+  gameActionControls.forEach((actionControl) => {
+    actionControl.addEventListener("click", async (event) => {
       if (actionPending) {
         event.preventDefault();
         return;
       }
 
       event.preventDefault();
-      actionPending = true;
-      gameActionLinks.forEach((link) => link.classList.add("is-loading"));
+      const actionForm = actionControl.closest("[data-game-action-form]");
+      if (!actionForm) {
+        return;
+      }
 
-      if (actionLink.dataset.gameActionType === "double" && gameRecap && currentBetOutput) {
+      actionPending = true;
+      gameActionControls.forEach((control) => {
+        control.classList.add("is-loading");
+        control.disabled = true;
+      });
+
+      const playsDrawSound = ["hit", "double"].includes(
+        actionControl.dataset.gameActionType,
+      );
+      const drawSoundWindow = playsDrawSound
+        ? new Promise((resolve) => window.setTimeout(resolve, drawSoundPlaybackWindow))
+        : Promise.resolve();
+
+      if (playsDrawSound) {
+        playDrawEffect();
+      }
+
+      if (actionControl.dataset.gameActionType === "double" && gameRecap && currentBetOutput) {
         const currentBet = Number(gameRecap.dataset.gameCurrentBet) || 0;
         const doubledBet = currentBet * 2;
         gameRecap.dataset.gameCurrentBet = String(doubledBet);
@@ -435,7 +731,9 @@ if (gamePage) {
       let actionApplied = false;
 
       try {
-        const response = await window.fetch(actionLink.href, {
+        const response = await window.fetch(actionForm.action, {
+          method: "POST",
+          body: new FormData(actionForm),
           credentials: "same-origin",
           redirect: "follow",
         });
@@ -458,15 +756,20 @@ if (gamePage) {
           }
         }
 
+        // Laisse au pop le temps d'être entendu avant le rafraîchissement de page.
+        await drawSoundWindow;
+
+        saveAmbientPosition();
         window.location.assign(
           response.redirected ? response.url : gamePage.dataset.gameDetailUrl || response.url,
         );
       } catch {
-        window.location.assign(
-          actionApplied && gamePage.dataset.gameDetailUrl
-            ? gamePage.dataset.gameDetailUrl
-            : actionLink.href,
-        );
+        saveAmbientPosition();
+        if (actionApplied && gamePage.dataset.gameDetailUrl) {
+          window.location.assign(gamePage.dataset.gameDetailUrl);
+        } else {
+          actionForm.submit();
+        }
       }
     });
   });
