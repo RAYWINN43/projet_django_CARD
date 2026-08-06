@@ -1,0 +1,25 @@
+@startuml
+!theme toy
+title Architecture - Projet BlackJack Django
+
+actor "Utilisateur" as User
+
+node "Docker Host" {
+  package "Application" #LightGreen {
+    component "Django\nGunicorn" as Django
+  }
+
+  package "Base de donnees" #LightBlue {
+    database "PostgreSQL" as Postgres
+  }
+
+  package "Cache & Sessions" #LightYellow {
+    database "Redis" as Redis
+  }
+}
+
+User --> Django : HTTP / navigateur
+Django --> Postgres : ORM Django
+Django --> Redis : sessions / cache
+
+@enduml

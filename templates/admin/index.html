@@ -1,0 +1,107 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'admin_dashboard.css' %}">
+{% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <script src="{% static 'admin_dashboard.js' %}" defer></script>
+{% endblock %}
+
+{% block coltype %}colMS{% endblock %}
+{% block bodyclass %}{{ block.super }} dashboard blackjack-admin-dashboard{% endblock %}
+{% block nav-breadcrumbs %}{% endblock %}
+{% block nav-sidebar %}{% endblock %}
+
+{% block content %}
+  <div id="content-main">
+    <section class="player-dashboard" data-player-dashboard aria-labelledby="player-dashboard-title">
+      <header class="player-dashboard__header">
+        <div>
+          <p class="player-dashboard__eyebrow">BLACKJACK · JOURNAL DES JOUEURS</p>
+          <h1 id="player-dashboard-title">Derniers joueurs</h1>
+          <p>Consultez le solde, le gain net et le détail des parties enregistrées.</p>
+        </div>
+
+        <label class="player-dashboard__search">
+          <span class="visually-hidden">Rechercher un joueur</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="6"></circle>
+            <path d="m16 16 4 4"></path>
+          </svg>
+          <input
+            type="search"
+            placeholder="Rechercher un joueur..."
+            autocomplete="off"
+            data-player-search
+          >
+        </label>
+      </header>
+
+      <div class="player-dashboard__grid" data-player-list>
+        {% for player in admin_player_dashboard %}
+          <button
+            class="admin-player-card"
+            type="button"
+            data-player-card
+            data-search-value="{{ player.user.username|lower }} {{ player.user.email|lower }}"
+            data-history-url="{% url 'admin:accounts_profile_history' player.id %}"
+          >
+            <span class="admin-player-card__avatar" aria-hidden="true">
+              {{ player.user.username|slice:":1"|upper }}
+            </span>
+            <span class="admin-player-card__identity">
+              <strong>{{ player.user.username }}</strong>
+              <small>{{ player.user.email|default:"Aucun email" }}</small>
+            </span>
+            <span class="admin-player-card__stats">
+              <span><small>Banque</small><strong>{{ player.jetons }}</strong></span>
+              <span>
+                <small>Gain net</small>
+                <strong class="{% if player.total_gain > 0 %}is-positive{% elif player.total_gain < 0 %}is-negative{% endif %}">
+                  {% if player.total_gain > 0 %}+{% endif %}{{ player.total_gain }}
+                </strong>
+              </span>
+              <span><small>Parties</small><strong>{{ player.games_count }}</strong></span>
+            </span>
+            <span class="admin-player-card__open" aria-hidden="true">→</span>
+          </button>
+        {% empty %}
+          <p class="player-dashboard__empty">Aucun joueur n’est encore inscrit.</p>
+        {% endfor %}
+      </div>
+
+      <p class="player-dashboard__empty" data-player-search-empty hidden>
+        Aucun joueur ne correspond à cette recherche.
+      </p>
+    </section>
+
+    <section class="admin-models" aria-labelledby="admin-models-title">
+      <h2 id="admin-models-title">Gestion des données</h2>
+      {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
+    </section>
+  </div>
+
+  <dialog class="player-history-dialog" data-player-history-dialog aria-labelledby="player-history-title">
+    <div class="player-history-dialog__shell">
+      <header class="player-history-dialog__header">
+        <div>
+          <p>HISTORIQUE DU JOUEUR</p>
+          <h2 id="player-history-title" data-player-history-title>Chargement…</h2>
+          <span data-player-history-email></span>
+        </div>
+        <button type="button" data-player-history-close aria-label="Fermer l’historique">×</button>
+      </header>
+
+      <div class="player-history-dialog__stats" data-player-history-stats></div>
+      <div class="player-history-dialog__content" data-player-history-content>
+        <p class="player-history-dialog__loading">Chargement de l’historique…</p>
+      </div>
+    </div>
+  </dialog>
+{% endblock %}
+
+{% block sidebar %}{% endblock %}

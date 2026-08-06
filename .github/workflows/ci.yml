@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main, STAGING, AUTHEN]
+  pull_request:
+    branches: [main, STAGING, AUTHEN]
+
+jobs:
+  django-check:
+    name: Django check
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: blackjack
+          POSTGRES_USER: blackjack
+          POSTGRES_PASSWORD: blackjack
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U blackjack -d blackjack"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DJANGO_SECRET_KEY: ci-secret-key
+      DJANGO_DEBUG: "0"
+      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,testserver"
+      DJANGO_SECURE_SSL_REDIRECT: "0"
+      DJANGO_SESSION_COOKIE_SECURE: "0"
+      DJANGO_CSRF_COOKIE_SECURE: "0"
+      POSTGRES_DB: blackjack
+      POSTGRES_USER: blackjack
+      POSTGRES_PASSWORD: blackjack
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: "5432"
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: "6379"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Check formatting with Black
+        run: uv run black --check --no-cache .
+
+      - name: Lint with Ruff
+        run: uv run ruff check . --no-cache
+
+      - name: Run migrations
+        run: uv run python manage.py migrate --noinput
+
+      - name: Run Django tests
+        run: uv run python manage.py test
+
+      - name: Run Django system check
+        run: uv run python manage.py check

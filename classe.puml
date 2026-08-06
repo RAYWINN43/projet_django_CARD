@@ -1,0 +1,100 @@
+@startuml
+!theme toy
+title Diagramme de classes - BlackJack Django
+
+class User {
+  +id
+  +username
+  +email
+  +password
+  +is_staff
+  +is_superuser
+}
+
+class Profile {
+  +id
+  +jetons
+}
+
+class Game {
+  +id
+  +state
+  +result
+  +player_bank
+  +pool
+  +bet_value
+  +running
+  +created_at
+  +updated_at
+  +new_game(bet, profile)
+  +hit()
+  +stop()
+  +double()
+  +check_results()
+}
+
+class Deck <<ORM>> {
+  +id
+  +zone
+  +visible
+  +visible_first
+  +init_deck()
+  +shuffle()
+  +draw()
+  +add(card)
+  +hand_value()
+  +to_dict()
+}
+
+class Card <<ORM>> {
+  +id
+  +value
+  +suit
+  +position
+  +true_value
+  +to_dict()
+}
+
+class MoveLog {
+  +id
+  +move
+  +actor
+  +card : JSON snapshot
+  +details : JSON
+  +created_at
+}
+
+class Player <<règles métier>> {
+  +bank
+  +add_to_bank(amount)
+  +debit(amount)
+  +get_bank()
+}
+
+class GameEngine <<service pur>> {
+  +shuffle()
+  +hand_value()
+  +evaluate_round()
+}
+
+User "1" -- "1" Profile : possède
+Profile "1" -- "0..*" Game : joue
+Game "1" *-- "4" Deck : zones de cartes
+Deck "1" *-- "0..52" Card : contient
+Game "1" *-- "0..*" MoveLog : journalise
+Game ..> Player : banque en mémoire
+Deck ..> GameEngine : règles
+Game ..> GameEngine : résultat
+
+note right of Deck
+  Contrainte unique : (game, zone)
+  Zones : draw, discard,
+  player_hand, dealer_hand
+end note
+
+note right of Card
+  Index : (deck, position)
+  Contrainte : 1 <= value <= 13
+end note
+
+@enduml
