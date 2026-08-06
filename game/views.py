@@ -43,7 +43,11 @@ def play_turn(request, game_id, move):
     if done:
         log = game.check_results()
         print(log)
-        return redirect("game_page")
+        return redirect("end_game", game_id=game.id)
 
     return render(request, "game.html", {"game": game})
 
+
+def end_game(request, game_id):
+    game = Game.objects.get(id=game_id)
+    return render(request, "game.html", {"game": game})

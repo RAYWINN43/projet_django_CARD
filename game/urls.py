@@ -6,4 +6,5 @@ urlpatterns = [
     path("launch", views.launch_game, name="launch_game"),
     path("<int:game_id>/launch", views.play_game, name="launch_game_id"),
     path("<int:game_id>/play/<str:move>", views.play_turn, name="play_turn"),
+    path("<int:game_id>/end", views.end_game, name="end_game"),
 ]
