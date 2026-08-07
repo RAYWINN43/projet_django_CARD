@@ -169,6 +169,8 @@ Ces commandes sont integrees dans la CI GitHub pour verifier en auto le projet a
 | **Total estimé** | **16 / 20** | Le projet respecte les attentes principales de l’énoncé : authentification, PostgreSQL, Redis, Docker Compose, interface de jeu, gestion des jetons et CI. |
 
 ### Capture d'ecran de l'interface principale
-page admin de django : ![](src/ADMINDJANGO.png)
+page admin de django : ![](src/admin.png)
+page admin de django coter utilisateur: ![](src/ADMINDJANGO.png)
+page admin de django vue log du joueur : ![](src/adminhisto.png)
 maquette Figma : ![](src/Maquettes_FIGMA.png)
 en jeux : ![](src/Screen_in_game.png)
