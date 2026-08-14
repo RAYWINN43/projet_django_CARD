@@ -71,10 +71,6 @@ copy .env.example .env
 
 Puis completer les variables necessaires dans `.env`.
 
-Le fichier `uv.lock` doit etre present dans le depot. La commande `uv lock` est
-necessaire uniquement si les dependances Python sont modifiees dans
-`pyproject.toml`.
-
 ### Lancer le projet
 
 Depuis la racine du projet :
