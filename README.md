@@ -173,4 +173,5 @@ page admin de django : ![](src/admin.png)
 page admin de django coter utilisateur: ![](src/ADMINDJANGO.png)
 page admin de django vue log du joueur : ![](src/adminhisto.png)
 maquette Figma : ![](src/Maquettes_FIGMA.png)
+le lien du Figma : https://www.figma.com/design/bRfhwfgAYzINOZirq4wg0a/AF-Nautique?node-id=45-2&t=1i1lNSZE1SiJdCjF-0  
 en jeux : ![](src/Screen_in_game.png)
